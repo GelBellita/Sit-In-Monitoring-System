@@ -1,0 +1,94 @@
+{% extends 'landing_page/layout.html' %}
+
+{% block title %}Login — UC CCS Monitoring System{% endblock %}
+
+{% block body_class %}form-page{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login_register.css') }}">
+{% endblock %}
+
+{% block content %}
+
+    <div class="split-screen">
+
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+            <div class="left-panel-bg"></div>
+
+            <div class="circle-blob circle-blob-gold-lg"></div>
+            <div class="circle-blob circle-blob-white"></div>
+            <div class="circle-blob circle-blob-gold-sm"></div>
+
+            <div class="left-panel-logo">
+                <img src="{{ url_for('static', filename='images/ucmainccslogo.png') }}" alt="UC Logo">
+                <span>University of Cebu<br>College of Computer Studies</span>
+            </div>
+
+            <div class="floating-cards">
+                <div class="info-card info-card-top">
+                    <div class="info-card-heading">Lab Schedule</div>
+                    <div class="info-card-row"><div class="status-dot"></div> Lab 1 — Available</div>
+                    <div class="info-card-row"><div class="status-dot"></div> Lab 2 — In Use</div>
+                    <div class="info-card-row"><div class="status-dot"></div> Lab 3 — Full</div>
+                </div>
+                <div class="info-card info-card-mid">
+                    <div class="info-card-heading">Active Session</div>
+                    <div class="info-card-row"><div class="status-dot"></div> Room 530</div>
+                    <div class="info-card-row"><div class="status-dot"></div> CCS Building, 5F</div>
+                </div>
+            </div>
+
+            <div class="left-panel-text">
+                <h2>CCS Lab Sit-in<br>Monitoring System</h2>
+                <p>Manage your computer lab sessions at the University of Cebu — fast, simple, and reliable.</p>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+            <div class="form-box">
+
+                <div class="form-logo">
+                    <img src="{{ url_for('static', filename='images/ucmainccslogo.png') }}" alt="UC Logo">
+                </div>
+
+               
+                <p class="form-subtitle">Sign in to your account to continue.</p>
+                
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="field-group">
+                        <label for="email">Email</label>
+                        <input type="text" id="email" name="email" placeholder="you@gmail.com" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <div class="login-meta">
+                        <label><input type="checkbox" name="remember"> Remember Me</label>
+                        <a href="#" class="forgot-password">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="btn-login">Login</button>
+                </form>
+
+                <p class="account-redirect">
+                    Don't have an account? <a href="{{ url_for('register') }}">Sign Up</a>
+                </p>
+
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block footer %}{% endblock %}

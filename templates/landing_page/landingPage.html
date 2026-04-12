@@ -1,0 +1,120 @@
+{% extends 'landing_page/layout.html' %}
+
+{% block title %}UC CCS — Sit-in Monitoring System{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block content %}
+
+    <section class="page-banner" id="home">
+        <div class="banner-bg"></div>
+
+        <div class="banner-text">
+            <span class="banner-label">University of Cebu &mdash; CCS Labs</span>
+            <h1>
+                Smart Lab Sit-in<br>
+                <span>Monitoring System</span>
+            </h1>
+            <p class="banner-desc">
+                A modern, efficient platform for managing student access to the College of
+                Computer Studies computer laboratories. Track sessions, monitor usage, and
+                ensure a seamless learning environment — all in real time.
+            </p>
+            <div class="banner-buttons">
+                <a href="{{ url_for('register') }}" class="btn-get-started">Get Started &rarr;</a>
+                <a href="{{ url_for('login') }}" class="btn-sign-in">Sign In</a>
+            </div>
+        </div>
+
+        <div class="banner-stats">
+            <div class="stat-item">
+                <div class="stat-number">10+</div>
+                <div class="stat-label">Computer Labs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Students Served</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">12k+</div>
+                <div class="stat-label">Satisfied Students</div>
+            </div>
+        </div>
+    </section>
+
+  
+    <section class="about-section" id="about">
+        <div class="section-title">
+            <h2>Everything You Need to Manage Lab Access</h2>
+            <p>Purpose-built tools for students and CCS administrators to streamline lab usage.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🖥️</div>
+                <h3>Visit Any Lab</h3>
+                <p>Visit any lab to check if you can sit-in.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Ask a Working Student</h3>
+                <p>The working student will guide you through the process of sitting in a lab.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Secure Access Control</h3>
+                <p>Only registered UC CCS students can request sit-in privileges, keeping labs safe and properly documented at all times.</p>
+            </div>
+        </div>
+    </section>
+
+  
+    <section class="community-section" id="community">
+        <div class="community-inner">
+            <h2>Our Community</h2>
+            <p class="community-lead">
+                The UC CCS community is made up of passionate students, dedicated faculty, and hardworking
+                working students who keep the labs running every single day.
+            </p>
+
+            <div class="community-columns">
+                <div class="community-block">
+                    <h3>Students</h3>
+                    <p>
+                        Hundreds of BS Information Technology and BS Computer Science use the CCS labs daily — for coursework, projects, research, and free time
+                        practice. The sit-in monitoring system exists to serve them fairly and efficiently.
+                    </p>
+                </div>
+                <div class="community-block">
+                    <h3>Working Students</h3>
+                    <p>
+                        Working students are the backbone of lab operations. They assist with sit-in logging,
+                        guide newcomers through the process, monitor lab occupancy, and ensure that every
+                        student who walks in gets the help they need.
+                    </p>
+                </div>
+                <div class="community-block">
+                    <h3>Faculty and Staff</h3>
+                    <p>
+                        CCS faculty and laboratory staff oversee the system, maintain lab equipment, and
+                        ensure that policies are followed. Their oversight keeps the environment
+                        productive and welcoming for everyone.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="signup-strip">
+        <h2>Ready to Access the CCS Labs?</h2>
+        <p>Create your account today and start booking sit-in sessions at the University of Cebu College of Computer Studies.</p>
+        <a href="{{ url_for('register') }}" class="btn-signup-strip">Create an Account</a>
+    </section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,309 @@
+{% extends 'student/studentLayout.html' %}
+
+{% block title %}Sit-in History — CCS SitIn{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+<style>
+.feedback-sent {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; color: #16a34a; font-weight: 600;
+}
+.feedback-sent .star-display { color: #f59e0b; font-size: 0.82rem; }
+.btn-feedback {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border: none; border-radius: 6px;
+    background: #f0f4ff; color: #3b5bdb; font-size: 0.78rem;
+    font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+.btn-feedback:hover { background: #3b5bdb; color: #fff; }
+.feedback-na { font-size: 0.78rem; color: #adb5bd; }
+
+.fb-modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 1000;
+    align-items: center; justify-content: center;
+}
+.fb-modal-backdrop.open { display: flex; }
+.fb-modal {
+    background: #fff; border-radius: 14px;
+    padding: 28px 30px 24px; width: 100%; max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    animation: modalIn .22s ease;
+}
+@keyframes modalIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.fb-modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.fb-modal-header i { font-size: 1.3rem; color: #3b5bdb; }
+.fb-modal-header h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e2a3a; }
+.fb-modal-header p  { margin: 0; font-size: 0.8rem; color: #6b7280; }
+
+.star-rating-group { margin-bottom: 16px; }
+.star-rating-label {
+    font-size: 0.78rem; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .4px;
+    display: block; margin-bottom: 8px;
+}
+.star-rating {
+    display: flex; gap: 6px; flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+.star-rating input { display: none; }
+.star-rating label {
+    font-size: 1.8rem; color: #d1d5db; cursor: pointer;
+    transition: color .15s, transform .1s;
+    text-transform: none; letter-spacing: 0;
+}
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label { color: #f59e0b; }
+.star-rating label:hover { transform: scale(1.15); }
+.star-hint { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; display: block; }
+
+.fb-modal textarea {
+    width: 100%; min-height: 100px; resize: vertical;
+    border: 1.5px solid #d1d5db; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.9rem; font-family: inherit;
+    color: #1e2a3a; outline: none; transition: border-color .2s;
+    box-sizing: border-box;
+}
+.fb-modal textarea:focus { border-color: #3b5bdb; }
+
+/* ── Inline error message inside the modal ── */
+.fb-error {
+    display: none;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.fb-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.btn-fb-cancel {
+    padding: 8px 18px; border: 1.5px solid #d1d5db; border-radius: 8px;
+    background: transparent; color: #6b7280; font-size: 0.88rem;
+    font-weight: 600; cursor: pointer; transition: background .2s;
+}
+.btn-fb-cancel:hover { background: #f3f4f6; }
+.btn-fb-submit {
+    padding: 8px 20px; border: none; border-radius: 8px;
+    background: #3b5bdb; color: #fff; font-size: 0.88rem; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: background .2s;
+}
+.btn-fb-submit:hover { background: #2f4bc0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-page">
+    <div class="card">
+        <div class="card-header ch-blue">
+            <div class="card-header-icon">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <span class="card-title">My Sit-in Sessions</span>
+            <span class="record-count">{{ records|length }} record{% if records|length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="card-body">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            {% if records %}
+            <div class="table-wrap">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Lab Room</th>
+                            <th>Purpose</th>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Status</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records %}
+                        <tr>
+                            <td class="row-num">{{ loop.index }}</td>
+                            <td><span class="lab-badge">{{ r['labRoom'] }}</span></td>
+                            <td class="purpose-cell">{{ r['purpose'] or '—' }}</td>
+                            <td class="time-cell">{{ r['timeIn'] }}</td>
+                            <td class="time-cell">{{ r['timeOut'] or '—' }}</td>
+                            <td><span class="status-badge status-{{ r['status']|lower }}">{{ r['status'] }}</span></td>
+                            <td>
+                                {% if r['status'] == 'Done' %}
+                                    {% if r['feedback'] %}
+                                        <span class="feedback-sent">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                            <span class="star-display">
+                                                {% set rating = r['feedbackRating'] if r['feedbackRating'] else 0 %}
+                                                {% for i in range(1, 6) %}{% if i <= rating %}★{% else %}☆{% endif %}{% endfor %}
+                                            </span>
+                                            Sent
+                                        </span>
+                                    {% else %}
+                                        <button class="btn-feedback"
+                                                data-record-id="{{ r['id'] }}"
+                                                data-lab-room="{{ r['labRoom'] }}">
+                                            <i class="fa-regular fa-comment-dots"></i> Leave Feedback
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="feedback-na">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fa-regular fa-clock"></i>
+                <p>No sit-in records yet</p>
+                <small>Your laboratory session history will appear here.</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ── Feedback Modal ── -->
+<div class="fb-modal-backdrop" id="fbModalBackdrop">
+    <div class="fb-modal">
+        <div class="fb-modal-header">
+            <i class="fa-regular fa-comment-dots"></i>
+            <div>
+                <h3>Leave Feedback</h3>
+                <p id="fbModalSubtitle">How was your session?</p>
+            </div>
+        </div>
+        <form method="POST" id="fbForm" action="">
+            <div class="star-rating-group">
+                <span class="star-rating-label">Rate your experience</span>
+                <div class="star-rating">
+                    <input type="radio" name="rating" id="star5" value="5">
+                    <label for="star5" title="5 stars">★</label>
+                    <input type="radio" name="rating" id="star4" value="4">
+                    <label for="star4" title="4 stars">★</label>
+                    <input type="radio" name="rating" id="star3" value="3" checked>
+                    <label for="star3" title="3 stars">★</label>
+                    <input type="radio" name="rating" id="star2" value="2">
+                    <label for="star2" title="2 stars">★</label>
+                    <input type="radio" name="rating" id="star1" value="1">
+                    <label for="star1" title="1 star">★</label>
+                </div>
+                <span class="star-hint">Click a star to rate (1 = poor, 5 = excellent)</span>
+            </div>
+
+            <textarea name="feedback" id="fbTextarea"
+                      placeholder="Share your experience, suggestions, or concerns about this session…"></textarea>
+
+            <!-- Error shown when foul words are detected client-side -->
+            <div class="fb-error" id="fbError"></div>
+
+            <div class="fb-modal-actions">
+                <button type="button" class="btn-fb-cancel" id="fbCancelBtn">Cancel</button>
+                <button type="submit" class="btn-fb-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// ── Foul word list for client-side pre-check ──────────────────────────────────
+// Sorted longest-first so multi-word phrases match before their substrings.
+const FOUL_WORDS = [
+    'putangina', 'putanginamo', 'putang ina', 'tang ina', 'fuck you',
+    'dumb ass', 'motherfucker', 'motherfucking', 'bullshit',
+    'tanginamo', 'hinayupak', 'tarantado',
+    'tangina', 'asshole', 'fucker', 'fucking', 'fucked', 'shitty',
+    'dumbass', 'bastard', 'bwisit', 'bwiset', 'giatay', 'demonyo',
+    'hayop', 'animal', 'inutil', 'pakyu', 'pakyo', 'letse', 'lintik',
+    'putcha', 'pucha', 'buang', 'boang', 'piste', 'pisti', 'hudas',
+    'nigger', 'nigga', 'tanga', 'ulol', 'leche', 'yawa', 'syet', 'shet',
+    'puta', 'gago', 'gaga', 'bobo', 'boba', 'bogo',
+    'fuck', 'shit', 'crap', 'ass', 'bitch', 'damn', 'dammit', 'hell',
+    'cunt', 'dick', 'cock', 'pussy', 'whore', 'slut',
+    'idiot', 'stupid', 'moron', 'retard', 'wtf', 'stfu',
+].sort((a, b) => b.length - a.length);
+
+function containsFoulWord(text) {
+    const lower = text.toLowerCase();
+    return FOUL_WORDS.some(w => lower.includes(w));
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+const fbModalBackdrop = document.getElementById('fbModalBackdrop');
+const fbForm          = document.getElementById('fbForm');
+const fbModalSubtitle = document.getElementById('fbModalSubtitle');
+const fbTextarea      = document.getElementById('fbTextarea');
+const fbCancelBtn     = document.getElementById('fbCancelBtn');
+const fbError         = document.getElementById('fbError');
+
+function openFbModal(recordId, labRoom) {
+    fbForm.action = `/student/history/feedback/${recordId}`;
+    fbModalSubtitle.textContent = `How was your session in Lab ${labRoom}?`;
+    fbTextarea.value = '';
+    fbError.style.display = 'none';
+    fbError.textContent = '';
+    fbModalBackdrop.classList.add('open');
+    setTimeout(() => fbTextarea.focus(), 100);
+}
+
+function closeFbModal() {
+    fbModalBackdrop.classList.remove('open');
+}
+
+// ── Open modal on button click ────────────────────────────────────────────────
+document.querySelectorAll('.btn-feedback').forEach(btn => {
+    btn.addEventListener('click', function () {
+        openFbModal(this.dataset.recordId, this.dataset.labRoom);
+    });
+});
+
+// ── Close modal ───────────────────────────────────────────────────────────────
+fbCancelBtn?.addEventListener('click', closeFbModal);
+
+fbModalBackdrop?.addEventListener('click', function (e) {
+    if (e.target === this) closeFbModal();
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && fbModalBackdrop.classList.contains('open')) closeFbModal();
+});
+
+// ── Client-side foul word check before submit ─────────────────────────────────
+fbForm?.addEventListener('submit', function (e) {
+    const text = fbTextarea.value.trim();
+
+    if (!text) return; // let server handle the empty check
+
+    if (containsFoulWord(text)) {
+        e.preventDefault();
+        fbError.textContent =
+            'Your feedback contains inappropriate language. Please revise it before submitting.';
+        fbError.style.display = 'block';
+        fbTextarea.focus();
+    }
+});
+</script>
+{% endblock %}

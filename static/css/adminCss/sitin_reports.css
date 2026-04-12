@@ -1,0 +1,342 @@
+/* ── sitin_reports.css ───────────────────────────────────────────────────────
+   Place in: static/css/adminCss/sitin_reports.css
+─────────────────────────────────────────────────────────────────────────── */
+
+.reports-page {
+    padding: 28px 32px;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.report-table-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════
+   TOOLBAR
+══════════════════════════════════════════════════════ */
+.report-toolbar {
+    background: #1a2744;
+    padding: 16px 22px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ── Row 1: date / search / reset  +  record count ─── */
+.toolbar-row-1 {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* individual labelled field */
+.tb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tb-field label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.5);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tb-field input[type="date"],
+.tb-field input[type="text"] {
+    height: 36px;
+    padding: 0 11px;
+    background: rgba(255,255,255,.09);
+    border: 1.5px solid rgba(255,255,255,.16);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.83rem;
+    outline: none;
+    transition: border-color .15s, background .15s;
+}
+.tb-field input:focus {
+    border-color: rgba(255,255,255,.45);
+    background: rgba(255,255,255,.14);
+}
+.tb-field input::placeholder { color: rgba(255,255,255,.38); }
+.tb-field input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); opacity: .55; cursor: pointer;
+}
+
+.tb-field-search input { width: 210px; }
+
+/* Reset button */
+.tb-btn {
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s;
+    white-space: nowrap;
+}
+.tb-reset {
+    background: rgba(255,255,255,.1);
+    border: 1.5px solid rgba(255,255,255,.18);
+    color: rgba(255,255,255,.75);
+}
+.tb-reset:hover { background: rgba(255,255,255,.18); }
+
+/* Record count pill */
+.toolbar-right { display: flex; align-items: flex-end; }
+
+.record-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 8px;
+    padding: 6px 14px;
+}
+.rp-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(255,255,255,.5);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.rp-val {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+/* ── Row 2: export strip ──────────────────────────────── */
+.toolbar-row-2 {
+    border-top: 1px solid rgba(255,255,255,.1);
+    padding: 10px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.export-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255,255,255,.45);
+    margin-right: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.exp-btn {
+    height: 30px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: filter .15s, transform .1s;
+}
+.exp-btn:hover  { filter: brightness(1.12); transform: translateY(-1px); }
+.exp-btn:active { transform: translateY(0); filter: brightness(.92); }
+
+.exp-csv   { background: #16a34a; color: #fff; }
+.exp-excel { background: #1d6f42; color: #fff; }
+.exp-pdf   { background: #dc2626; color: #fff; }
+.exp-print { background: #475569; color: #fff; }
+
+/* ══════════════════════════════════════════════════════
+   TABLE
+══════════════════════════════════════════════════════ */
+.report-table-wrap {
+    overflow-x: auto;
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+}
+
+.report-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 0.73rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #4a5568;
+    background: #f0f3f8;
+    border-bottom: 2px solid #dce3ed;
+    white-space: nowrap;
+}
+
+.report-table tbody tr {
+    border-bottom: 1px solid #f0f3f8;
+    transition: background .12s;
+}
+.report-table tbody tr:hover { background: #f7f9fc; }
+
+.report-table td {
+    padding: 10px 14px;
+    color: #2d3748;
+    vertical-align: middle;
+}
+
+.row-num   { font-weight: 600; color: #a0aec0; font-size: 0.78rem; }
+.id-val    { color: #2b6cb0; font-weight: 600; font-size: 0.82rem; }
+.name-cell { font-weight: 600; color: #1a2744; white-space: nowrap; }
+.year-cell { font-size: 0.82rem; color: #4a5568; font-weight: 600; white-space: nowrap; }
+.time-cell { font-size: 0.8rem; color: #718096; white-space: nowrap; }
+.date-cell { font-size: 0.8rem; color: #718096; white-space: nowrap; }
+
+.course-tag {
+    display: inline-block; padding: 2px 9px; border-radius: 5px;
+    font-size: 0.74rem; font-weight: 700;
+    background: #ebf4ff; color: #2b6cb0; white-space: nowrap;
+}
+.purpose-tag {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600;
+    background: #f0f3ff; color: #3b5bdb; white-space: nowrap;
+}
+.lab-tag {
+    display: inline-block; padding: 2px 10px; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 700;
+    background: #e6f4ea; color: #276749; white-space: nowrap;
+}
+
+/* ── Print styles ─────────────────────────────────────── */
+@media print {
+
+    @page { size: landscape; margin: 14mm; }
+
+    /* Hide everything */
+    body * { visibility: hidden; }
+
+    /* Show only the table card */
+    .report-table-card,
+    .report-table-card * { visibility: visible; }
+
+    /* Hide toolbar and footer */
+    .report-toolbar,
+    .report-footer { display: none !important; }
+
+    /* Card fills the page, clean like feedback report */
+    .report-table-card {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        border-radius: 0;
+    }
+
+    /* Remove scroll so all rows print */
+    .report-table-wrap {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* Keep hidden rows hidden */
+    .report-row.hidden { display: none !important; }
+
+    /* Navy header bar — like feedback report card header */
+    .report-table-wrap::before {
+        content: "CCS Sit-in Records Report";
+        display: block;
+        background: #1a2744;
+        color: #fff;
+        font-size: 11pt;
+        font-weight: 700;
+        padding: 12px 18px 4px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        visibility: visible;
+    }
+
+    .report-table-wrap::after {
+        content: "Student sit-in sessions recorded by the administrator";
+        display: block;
+        background: #1a2744;
+        color: rgba(255,255,255,.6);
+        font-size: 8pt;
+        padding: 0 18px 12px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        visibility: visible;
+    }
+
+    /* Sticky header fix for print */
+    .report-table thead th {
+        position: static;
+        background: #f0f3f8 !important;
+        color: #4a5568 !important;
+        border-bottom: 2px solid #dce3ed !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Alternate row shading */
+    .report-table tbody tr:nth-child(even) td {
+        background: #f7f9fc !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Tag colors */
+    .course-tag  { background: #ebf4ff !important; color: #2b6cb0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .purpose-tag { background: #f0f3ff !important; color: #3b5bdb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .lab-tag     { background: #e6f4ea !important; color: #276749 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+/* ── Footer ───────────────────────────────────────────── */
+.report-footer {
+    padding: 11px 18px;
+    border-top: 1px solid #f0f3f8;
+    background: #fafbfc;
+    font-size: 0.8rem;
+    color: #a0aec0;
+}
+
+/* ── Hidden rows ──────────────────────────────────────── */
+.report-row.hidden { display: none; }
+
+/* ── Empty state ──────────────────────────────────────── */
+.empty-report {
+    text-align: center; padding: 52px 20px; color: #a0aec0;
+}
+.empty-report i     { font-size: 2.4rem; margin-bottom: 12px; display: block; }
+.empty-report p     { font-size: 0.95rem; font-weight: 600; margin: 0 0 4px; color: #718096; }
+.empty-report small { font-size: 0.82rem; }

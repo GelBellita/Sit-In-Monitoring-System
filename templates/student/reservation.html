@@ -1,0 +1,393 @@
+{% extends 'student/studentLayout.html' %}
+
+{% block title %}Reserve a PC — CCS SitIn{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reservation.css') }}">
+
+
+{% endblock %}
+
+{% block content %}
+<div class="resv-root">
+
+    <!-- ══ SIDEBAR: My Reservations ══ -->
+    <aside class="resv-sidebar">
+        <div class="resv-sidebar-header">
+            <div class="resv-sidebar-title">
+                <i class="fa-solid fa-list-check"></i>
+                My Reservations
+            </div>
+            {% if my_reservations %}
+            <form method="POST" action="{{ url_for('student_clear_reservations') }}"
+                  onsubmit="return confirm('Clear all reservations? This cannot be undone.')">
+                <button type="submit" class="btn-clear-all">
+                    <i class="fa-solid fa-trash-can"></i> Clear
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="resv-sidebar-list">
+            {% if my_reservations %}
+                {% for r in my_reservations %}
+                <div class="resv-item">
+                    <div class="resv-item-top">
+                        <div class="resv-item-lab">Lab {{ r['labRoom'] }} — PC {{ r['pcNumber'] }}</div>
+                        <span class="resv-item-badge {{ r['status']|lower }}">
+                            {% if r['status'] == 'Pending' %}<i class="fa-solid fa-hourglass-half"></i>
+                            {% elif r['status'] == 'Approved' %}<i class="fa-solid fa-circle-check"></i>
+                            {% else %}<i class="fa-solid fa-circle-xmark"></i>{% endif %}
+                            {{ r['status'] }}
+                        </span>
+                    </div>
+                    <div class="resv-item-meta">
+                        <span><i class="fa-regular fa-calendar"></i>{{ r['reserveDate'] }}</span>
+                        <span><i class="fa-regular fa-clock"></i>{{ r['timeSlot'] }}</span>
+                    </div>
+                    <div class="resv-item-purpose">
+                        <i class="fa-solid fa-bullseye"></i> {{ r['purpose'] }}
+                    </div>
+                    {% if r['status'] == 'Rejected' and r['rejectReason'] %}
+                    <div class="resv-item-reason">
+                        <i class="fa-solid fa-circle-info"></i> {{ r['rejectReason'] }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="resv-empty">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <p>No reservations yet</p>
+                    <small>Submitted reservations appear here.</small>
+                </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- ══ MAIN ══ -->
+    <div class="resv-main">
+
+        {% if active_sitin %}
+        <!-- ── Active Sit-In Block Banner ── -->
+        <div style="
+            background: #fff7ed;
+            border: 1.5px solid #f97316;
+            border-radius: 12px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 24px;
+        ">
+            <i class="fa-solid fa-triangle-exclamation"
+            style="color:#f97316; font-size:1.4rem; margin-top:2px; flex-shrink:0;"></i>
+            <div>
+                <div style="font-weight:700; color:#9a3412; font-size:0.95rem; margin-bottom:4px;">
+                    Active Sit-In Session in Progress
+                </div>
+                <div style="color:#c2410c; font-size:0.85rem; line-height:1.5;">
+                    You are currently logged in at <strong>Lab {{ active_sitin['labRoom'] }}</strong>
+                    (since {{ active_sitin['timeIn'] }}).
+                    You cannot submit a new reservation until your current session ends.
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizard dimmed/disabled overlay wrapper -->
+        <div style="opacity:0.45; pointer-events:none; user-select:none;">
+        {% endif %}
+
+        <!-- Step bar -->
+        <div class="resv-stepbar">
+            <div class="step-node active" id="step-ind-1">
+                <div class="step-node-circle" id="sc1">1</div>
+                <div class="step-node-label">Lab <span class="step-badge" id="stepLabBadge" style="display:none"></span></div>
+            </div>
+            <div class="step-connector" id="conn1"></div>
+            <div class="step-node" id="step-ind-2">
+                <div class="step-node-circle" id="sc2">2</div>
+                <div class="step-node-label">Date &amp; Time</div>
+            </div>
+            <div class="step-connector" id="conn2"></div>
+            <div class="step-node" id="step-ind-3">
+                <div class="step-node-circle" id="sc3">3</div>
+                <div class="step-node-label">Select PC</div>
+            </div>
+            <div class="step-connector" id="conn3"></div>
+            <div class="step-node" id="step-ind-4">
+                <div class="step-node-circle" id="sc4">4</div>
+                <div class="step-node-label">Confirm</div>
+            </div>
+        </div>
+
+        <!-- Scrollable panels area -->
+        <div class="resv-panels">
+
+            <!-- ── STEP 1: Lab ── -->
+            <div id="stepPanel1" class="step-panel active">
+                <div class="panel-title"><i class="fa-solid fa-door-open"></i> Choose a Laboratory</div>
+                <div class="panel-sub">Select the lab room you want to reserve a PC in.</div>
+                <div class="labs-grid">
+                    {% for lab in ['524','526','528','530','542','544'] %}
+                    <button class="lab-tile" data-lab="{{ lab }}">
+                        <div class="lab-tile-icon"><i class="fa-solid fa-desktop"></i></div>
+                        <div class="lab-tile-name">Lab {{ lab }}</div>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ── STEP 2: Date & Time ── -->
+            <div id="stepPanel2" class="step-panel">
+                <div class="panel-title"><i class="fa-solid fa-calendar-days"></i> Pick a Date &amp; Time Slot</div>
+                <div class="panel-sub">Choose the date and available time slot for your session.</div>
+                <div class="datetime-grid">
+
+                    <!-- Calendar -->
+                    <div class="dt-card">
+                        <div class="dt-card-header">
+                            <i class="fa-solid fa-calendar"></i> Select Date
+                        </div>
+                        <div class="cal-wrap">
+                            <div class="cal-nav">
+                                <button class="cal-nav-btn" id="calPrev"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span class="cal-month-label" id="calMonthLabel"></span>
+                                <button class="cal-nav-btn" id="calNext"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <div class="cal-weekdays">
+                                <span>Su</span><span>Mo</span><span>Tu</span>
+                                <span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                            </div>
+                            <div class="cal-days" id="calDays"></div>
+                            <div class="cal-selected-strip" id="calStrip" style="display:none">
+                                <i class="fa-regular fa-calendar-check"></i>
+                                <span id="calSelectedText"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time slots -->
+                    <div class="dt-card">
+                        <div class="dt-card-header">
+                            <i class="fa-solid fa-clock"></i> Select Time Slot
+                        </div>
+                        <div class="timeslots-wrap" id="timeslotList">
+                            {% set slots = [
+                                ('7:00 AM – 9:00 AM',  'fa-sun',       'Morning'),
+                                ('9:00 AM – 11:00 AM', 'fa-cloud-sun', 'Morning'),
+                                ('11:00 AM – 1:00 PM', 'fa-cloud-sun', 'Midday'),
+                                ('1:00 PM – 3:00 PM',  'fa-cloud',     'Afternoon'),
+                                ('3:00 PM – 5:00 PM',  'fa-cloud',     'Afternoon'),
+                                ('5:00 PM – 7:00 PM',  'fa-moon',      'Evening'),
+                            ] %}
+                            {% for slot, icon, period in slots %}
+                            <button class="timeslot-btn" data-slot="{{ slot }}">
+                                <div class="ts-icon"><i class="fa-solid {{ icon }}"></i></div>
+                                <div class="ts-text">
+                                    <span class="ts-time">{{ slot }}</span>
+                                    <span class="ts-period">{{ period }}</span>
+                                </div>
+                                <div class="ts-check"><i class="fa-solid fa-check"></i></div>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── STEP 3: PC ── -->
+            <div id="stepPanel3" class="step-panel">
+                <div class="panel-title"><i class="fa-solid fa-desktop"></i> Select a PC</div>
+                <div class="panel-sub">Click any available (green) PC to reserve it for your session.</div>
+
+                <div class="pc-section">
+                    <div class="pc-section-header">
+                        <div class="pc-section-header-left">
+                            <i class="fa-solid fa-desktop"></i>
+                            Lab Room Map
+                        </div>
+                        <span class="pc-avail-count" id="pcAvailCount">Loading…</span>
+                    </div>
+
+                    <div class="pc-legend">
+                        <div class="legend-item"><div class="legend-dot ld-free"></div> Available</div>
+                        <div class="legend-item"><div class="legend-dot ld-reserved"></div> Reserved</div>
+                        <div class="legend-item"><div class="legend-dot ld-inuse"></div> In Use</div>
+                        <div class="legend-item"><div class="legend-dot ld-selected"></div> Your Pick</div>
+                    </div>
+
+                    <div class="pc-room-wrap">
+                        <div class="pc-loading-overlay" id="pcLoadingOverlay">
+                            <div class="pc-loading-spinner"></div>
+                            <div class="pc-loading-text">Checking availability…</div>
+                        </div>
+
+                        <div class="pc-grid" id="pcGrid">
+                            {# Row 5 (top = exit side): right-to-left, PC 33–40 #}
+                            {% for i in [40,39,38,37,36,35,34,33] %}
+                            <button class="pc-btn pc-free" data-pc="{{ i }}" title="PC {{ i }}">
+                                <i class="fa-solid fa-desktop"></i>
+                                <span class="pc-num">{{ i }}</span>
+                                <span class="pc-status-text">Free</span>
+                            </button>
+                            {% endfor %}
+                            {% for i in [32,31,30,29,28,27,26,25] %}
+                            <button class="pc-btn pc-free" data-pc="{{ i }}" title="PC {{ i }}">
+                                <i class="fa-solid fa-desktop"></i>
+                                <span class="pc-num">{{ i }}</span>
+                                <span class="pc-status-text">Free</span>
+                            </button>
+                            {% endfor %}
+                            {% for i in [24,23,22,21,20,19,18,17] %}
+                            <button class="pc-btn pc-free" data-pc="{{ i }}" title="PC {{ i }}">
+                                <i class="fa-solid fa-desktop"></i>
+                                <span class="pc-num">{{ i }}</span>
+                                <span class="pc-status-text">Free</span>
+                            </button>
+                            {% endfor %}
+                            {% for i in [16,15,14,13,12,11,10,9] %}
+                            <button class="pc-btn pc-free" data-pc="{{ i }}" title="PC {{ i }}">
+                                <i class="fa-solid fa-desktop"></i>
+                                <span class="pc-num">{{ i }}</span>
+                                <span class="pc-status-text">Free</span>
+                            </button>
+                            {% endfor %}
+                            {# Row 1 (bottom = entrance side): PC 1–8 #}
+                            {% for i in [8,7,6,5,4,3,2,1] %}
+                            <button class="pc-btn pc-free" data-pc="{{ i }}" title="PC {{ i }}">
+                                <i class="fa-solid fa-desktop"></i>
+                                <span class="pc-num">{{ i }}</span>
+                                <span class="pc-status-text">Free</span>
+                            </button>
+                            {% endfor %}
+                        </div>
+
+                        <div class="pc-room-labels">
+                            <div class="room-label label-exit">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                <span>Exit</span>
+                            </div>
+                            <div class="room-label label-board">
+                                <i class="fa-solid fa-chalkboard-teacher"></i>
+                                <span>Board</span>
+                            </div>
+                            <div class="room-label label-entrance">
+                                <i class="fa-solid fa-door-open"></i>
+                                <span>Entrance</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selection bar inside card -->
+                    <div class="pc-selection-bar" id="pcSelectionBar">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span id="pcSelectionNum">—</span>
+                        <span class="pc-deselect" id="pcDeselectLink">Deselect</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── STEP 4: Confirm ── -->
+            <div id="stepPanel4" class="step-panel">
+                <div class="panel-title"><i class="fa-solid fa-circle-check"></i> Confirm Your Reservation</div>
+                <div class="panel-sub">Review the details below and choose a purpose before submitting.</div>
+
+                <div class="confirm-grid">
+                    <div class="confirm-card confirm-summary-card">
+                        <div class="confirm-card-header">
+                            <i class="fa-solid fa-clipboard-list"></i> Reservation Details
+                        </div>
+                        <div class="confirm-rows">
+                            <div class="confirm-row">
+                                <div class="confirm-row-icon"><i class="fa-solid fa-door-open"></i></div>
+                                <div>
+                                    <div class="confirm-row-label">Laboratory</div>
+                                    <div class="confirm-row-val" id="cfLab">—</div>
+                                </div>
+                            </div>
+                            <div class="confirm-row">
+                                <div class="confirm-row-icon"><i class="fa-regular fa-calendar"></i></div>
+                                <div>
+                                    <div class="confirm-row-label">Date</div>
+                                    <div class="confirm-row-val" id="cfDate">—</div>
+                                </div>
+                            </div>
+                            <div class="confirm-row">
+                                <div class="confirm-row-icon"><i class="fa-regular fa-clock"></i></div>
+                                <div>
+                                    <div class="confirm-row-label">Time Slot</div>
+                                    <div class="confirm-row-val" id="cfSlot">—</div>
+                                </div>
+                            </div>
+                            <div class="confirm-row">
+                                <div class="confirm-row-icon"><i class="fa-solid fa-desktop"></i></div>
+                                <div>
+                                    <div class="confirm-row-label">PC Number</div>
+                                    <div class="confirm-row-val" id="cfPC">—</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="confirm-card confirm-form-card">
+                        <div class="confirm-card-header">
+                            <i class="fa-solid fa-pen-to-square"></i> Purpose &amp; Submit
+                        </div>
+                        <div class="confirm-form-body">
+                            <form method="POST" action="{{ url_for('student_reserve') }}" id="resvForm">
+                                <input type="hidden" name="labRoom"     id="fLabRoom">
+                                <input type="hidden" name="reserveDate" id="fDate">
+                                <input type="hidden" name="timeSlot"    id="fSlot">
+                                <input type="hidden" name="pcNumber"    id="fPC">
+
+                                <div class="form-group-r">
+                                    <label><i class="fa-solid fa-bullseye"></i> Purpose / Reason</label>
+                                    <select name="purpose" required>
+                                        <option value="" disabled selected>Select purpose…</option>
+                                        <option value="Assignment">📝 Assignment</option>
+                                        <option value="Activity">🎯 Activity</option>
+                                        <option value="Project">🛠️ Project</option>
+                                        <option value="Capstone">🎓 Capstone</option>
+                                        <option value="Practice / Self-Study">📖 Practice / Self-Study</option>
+                                        <option value="Other">💡 Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="confirm-notice">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    Your reservation will be pending until approved by admin. You'll receive a notification once it's reviewed.
+                                </div>
+
+                                <button type="submit" class="btn-nav-submit" style="width:100%;justify-content:center;">
+                                    <i class="fa-solid fa-calendar-check"></i> Submit Reservation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.resv-panels -->
+
+        <!-- Bottom nav bar — back/next always visible -->
+        <div class="step-nav-bar" id="stepNavBar">
+            <button class="btn-nav-back" id="btnBack" onclick="navBack()" style="visibility:hidden">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button class="btn-nav-next" id="btnNext" disabled onclick="navNext()">
+                Next <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+    </div><!-- /.resv-main -->
+</div><!-- /.resv-root -->
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+const OCCUPIED_PCS = JSON.parse('{{ occupied_pcs | tojson | safe }}');
+const CHECK_URL    = "{{ url_for('check_availability') }}";
+</script>
+<script src="{{ url_for('static', filename='js/reservation.js') }}"></script>
+{% endblock %}

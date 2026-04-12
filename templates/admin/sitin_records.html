@@ -1,0 +1,154 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Sit-in Records — CCS Admin{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/sitin_records.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="records-page">
+
+    <div class="records-page-title">
+        <i class="fa-solid fa-table-list"></i>
+        Sit-in Records
+    </div>
+
+    <!-- ── Stacked Bar Chart ─────────────────────────────────── -->
+    <div class="chart-card">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-card-title">
+                    <i class="fa-solid fa-chart-bar"></i>
+                    Lab Usage by Purpose
+                </div>
+            </div>
+            <div class="chart-legend-hint">
+                <i class="fa-solid fa-circle-info" style="margin-right:5px;opacity:.7;"></i>
+                Hover a bar for details
+            </div>
+        </div>
+        <div class="chart-body">
+            <canvas id="recordsBarChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ── Records Table ───────────────────────────────────── -->
+    <div class="table-card">
+        <div class="table-card-header">
+            <div class="table-card-title">
+                <i class="fa-solid fa-list-ul"></i>
+                All Records
+                <span class="record-total">({{ records|length }} total)</span>
+            </div>
+            <div class="table-controls">
+                <div class="search-records">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="tableSearch" placeholder="Search records…">
+                </div>
+            </div>
+        </div>
+
+        <div class="records-table-wrap">
+            {% if records %}
+            <table class="records-table" id="recordsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID No.</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Year</th>
+                        <th>Purpose</th>
+                        <th>Lab</th>
+                        <th>PC</th>
+                        <th>Login</th>
+                        <th>Logout</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsTbody">
+                    {% for r in records %}
+                    <tr class="record-row"
+                        data-id="{{ r['studentId'] }}"
+                        data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
+                        data-course="{{ r['course'] or '' }}"
+                        data-purpose="{{ r['purpose'] or '' }}"
+                        data-lab="{{ r['labRoom'] }}"
+                        data-date="{{ r['timeIn'][:10] if r['timeIn'] else '' }}">
+                        <td class="row-num">{{ loop.index }}</td>
+                        <td><span class="id-link">{{ r['studentId'] }}</span></td>
+                        <td class="name-cell">{{ r['lastName'] }}, {{ r['firstName'] }}</td>
+                        <td><span class="course-tag">{{ r['course'] or '—' }}</span></td>
+                        <td class="year-cell">
+                            {% if r['yearLevel'] %}
+                                {% set yr = r['yearLevel']|string %}
+                                {% if yr in ['1','2','3','4'] %}Year {{ yr }}
+                                {% elif yr.startswith('1') %}Year 1
+                                {% elif yr.startswith('2') %}Year 2
+                                {% elif yr.startswith('3') %}Year 3
+                                {% elif yr.startswith('4') %}Year 4
+                                {% else %}{{ yr }}{% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td><span class="purpose-tag">{{ r['purpose'] or '—' }}</span></td>
+                        <td><span class="lab-tag">Lab {{ r['labRoom'] }}</span></td>
+                        <td>
+                            {% if r['pcNumber'] %}
+                                <span style="display:inline-flex;align-items:center;gap:3px;
+                                    background:#eff6ff;border:1.5px solid #93c5fd;color:#1e40af;
+                                    font-size:0.73rem;font-weight:700;padding:2px 8px;
+                                    border-radius:20px;white-space:nowrap;">
+                                    <i class="fa-solid fa-desktop" style="font-size:0.62rem;"></i>
+                                    PC {{ r['pcNumber'] }}
+                                </span>
+                            {% else %}
+                                <span style="color:#94a3b8;font-size:0.8rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="time-cell">
+                            {% if r['timeIn'] %}{{ r['timeIn'][11:16] }}{% else %}—{% endif %}
+                        </td>
+                        <td class="time-cell">
+                            {% if r['timeOut'] %}{{ r['timeOut'][11:16] }}{% else %}—{% endif %}
+                        </td>
+                        <td class="date-cell">
+                            {% if r['timeIn'] %}{{ r['timeIn'][:10] }}{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-records">
+                <i class="fa-regular fa-folder-open"></i>
+                <p>No sit-in records found</p>
+                <small>Records will appear here once students start their lab sessions.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="table-footer">
+            <div class="pagination-info" id="paginationInfo">
+                Showing all {{ records|length }} record{% if records|length != 1 %}s{% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script id="chartData" type="application/json">
+{
+    "by_purpose_lab": [
+        {% for r in records %}
+        {"purpose": {{ r['purpose']|tojson }}, "lab": {{ r['labRoom']|tojson }}}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/sitin_records.js') }}"></script>
+{% endblock %}

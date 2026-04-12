@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CCS Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student_layout.css') }}">
+
+    <style>
+    .notif-wrap { position: relative; display: inline-block; }
+    .notif-btn {
+        position: relative; width: 40px; height: 40px; border-radius: 50%;
+        border: none; background: rgba(255,255,255,0.12); color: #fff;
+        font-size: 1rem; cursor: pointer; display: flex; align-items: center;
+        justify-content: center; transition: background 0.2s, transform 0.15s; outline: none;
+    }
+    .notif-btn:hover, .notif-btn:focus, .notif-wrap.open .notif-btn {
+        background: rgba(255,255,255,0.22); transform: scale(1.08);
+    }
+    .notif-badge {
+        position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px;
+        border-radius: 9px; background: #ef4444; color: #fff; font-size: 0.6rem;
+        font-weight: 800; display: flex; align-items: center; justify-content: center;
+        padding: 0 4px; border: 2px solid #1a2744; pointer-events: none;
+        animation: badgePop 0.3s ease;
+    }
+    @keyframes badgePop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    .notif-dropdown {
+        position: absolute; top: calc(100% + 10px); right: 0; width: 340px;
+        max-height: 420px; background: #fff; border-radius: 14px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #e5e7eb; display: flex; flex-direction: column;
+        overflow: hidden; z-index: 9999;
+        opacity: 0; transform: translateY(-8px) scale(0.97);
+        pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .notif-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .notif-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 16px 12px; border-bottom: 1px solid #f3f4f6; flex-shrink: 0;
+    }
+    .notif-header > span { font-size: 0.82rem; font-weight: 700; color: #1a2744; display: flex; align-items: center; gap: 7px; }
+    .notif-header > span i { color: #f59e0b; }
+    .notif-mark-read-btn {
+        font-size: 0.72rem; font-weight: 600; color: #6b7280; background: none;
+        border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 10px;
+        cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .notif-mark-read-btn:hover { background: #f3f4f6; color: #374151; }
+    .notif-list {
+        flex: 1; overflow-y: auto; padding: 8px;
+        scrollbar-width: thin; scrollbar-color: #e5e7eb transparent;
+    }
+    .notif-list::-webkit-scrollbar { width: 4px; }
+    .notif-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+    .notif-empty {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 8px; padding: 32px 20px; color: #9ca3af; text-align: center;
+    }
+    .notif-empty i { font-size: 1.8rem; }
+    .notif-empty p { font-size: 0.82rem; font-weight: 600; margin: 0; }
+    .notif-item {
+        display: flex; align-items: flex-start; gap: 10px; padding: 10px;
+        border-radius: 8px; margin-bottom: 4px; transition: background 0.15s; cursor: default;
+    }
+    .notif-item:last-child { margin-bottom: 0; }
+    .notif-item:hover { background: #f9fafb; }
+    .notif-item.notif-unread { background: #eff6ff; border-left: 3px solid #3b82f6; padding-left: 8px; }
+    .notif-item.notif-unread:hover { background: #dbeafe; }
+    .notif-item.notif-type-success.notif-unread { border-left-color: #16a34a; background: #f0fdf4; }
+    .notif-item.notif-type-error.notif-unread   { border-left-color: #dc2626; background: #fef2f2; }
+    .notif-item-icon { font-size: 0.95rem; margin-top: 1px; flex-shrink: 0; width: 20px; text-align: center; }
+    .notif-item-icon.success { color: #16a34a; }
+    .notif-item-icon.error   { color: #dc2626; }
+    .notif-item-icon.warning { color: #d97706; }
+    .notif-item-icon.info    { color: #2563eb; }
+    .notif-item-body { flex: 1; min-width: 0; }
+    .notif-item-msg  { font-size: 0.78rem; color: #1f2937; line-height: 1.45; word-break: break-word; }
+    .notif-item-time { font-size: 0.67rem; color: #9ca3af; margin-top: 3px; }
+    </style>
+
+    {% block page_styles %}{% endblock %}
+</head>
+<body>
+
+<header class="topnav">
+    <a href="{{ url_for('dashboard') }}" class="topnav-brand">
+        <div class="brand-icon">
+            <img src="{{ url_for('static', filename='images/uclogo.png') }}" alt="UC Logo">
+        </div>
+        <div class="brand-text">
+            <span class="brand-title">University of Cebu</span>
+            <span class="brand-sub">CCS SitIn Monitoring</span>
+        </div>
+    </a>
+
+    <nav class="topnav-links">
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-home"></i><span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('edit_profile') }}" class="nav-link {% if request.endpoint == 'edit_profile' %}active{% endif %}">
+            <i class="fa-solid fa-user-pen"></i><span>Edit Profile</span>
+        </a>
+        <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint == 'history' %}active{% endif %}">
+            <i class="fa-solid fa-clock-rotate-left"></i><span>Sit-in History</span>
+        </a>
+        <a href="{{ url_for('reservation') }}" class="nav-link {% if request.endpoint == 'reservation' %}active{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i><span>Reservation</span>
+        </a>
+    </nav>
+
+    <div class="topnav-user">
+        <div class="notif-wrap" id="notifWrap">
+            <button class="notif-btn" id="notifBtn" type="button" title="Notifications" aria-label="Notifications">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown" role="dialog" aria-label="Notifications">
+                <div class="notif-header">
+                    <span><i class="fa-solid fa-bell"></i> Notifications</span>
+                    <button class="notif-mark-read-btn" id="markAllReadBtn" type="button">Mark all read</button>
+                </div>
+                <div class="notif-list" id="notifList">
+                    <div class="notif-empty">
+                        <i class="fa-regular fa-bell-slash"></i>
+                        <p>No notifications yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+
+    <button class="mobile-menu-btn" id="mobileMenuBtn" type="button">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+</header>
+
+<div class="mobile-drawer" id="mobileDrawer">
+    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <i class="fa-solid fa-home"></i> Dashboard
+    </a>
+    <a href="{{ url_for('edit_profile') }}" class="nav-link {% if request.endpoint == 'edit_profile' %}active{% endif %}">
+        <i class="fa-solid fa-user-pen"></i> Edit Profile
+    </a>
+    <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint == 'history' %}active{% endif %}">
+        <i class="fa-solid fa-clock-rotate-left"></i> Sit-in History
+    </a>
+    <a href="{{ url_for('reservation') }}" class="nav-link {% if request.endpoint == 'reservation' %}active{% endif %}">
+        <i class="fa-solid fa-calendar-check"></i> Reservation
+    </a>
+    <a href="{{ url_for('logout') }}" class="nav-link logout-mobile">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+</div>
+
+<div class="page-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-msg flash-{{ category }}">
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()">&#x2715;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main class="page-content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+{% block footer %}
+<footer class="page-footer">
+    &copy; BELLITA 2026 <span>University of Cebu</span> &mdash; College of Computer Studies Sit-in Monitoring System
+</footer>
+{% endblock %}
+
+<!-- ONE script file only. No globals block needed — URLs are hardcoded in script.js -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block page_scripts %}{% endblock %}
+</body>
+</html>

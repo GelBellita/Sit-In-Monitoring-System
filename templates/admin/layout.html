@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CCS Admin{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/admin.css') }}">
+    {% block extra_styles %}{% endblock %}
+    <style>
+        .nav-link { position: relative; }
+        .nav-badge {
+            position: absolute; top: 2px; right: 2px;
+            min-width: 17px; height: 17px;
+            background: #ef4444; color: #fff;
+            font-size: 0.65rem; font-weight: 800;
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            padding: 0 4px; border: 2px solid rgba(0,28,80,0.96);
+            animation: badgePop 0.3s cubic-bezier(.36,.07,.19,.97) both; line-height: 1;
+        }
+        @keyframes badgePop {
+            0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}
+        }
+
+        /* ── Sit-In Modal ── */
+        .sitin-modal {
+            max-width: 540px !important; padding: 0 !important;
+            overflow: hidden; border-radius: 16px;
+        }
+        .sitin-modal-header {
+            background: var(--navy); padding: 18px 24px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .sitin-modal-hicon {
+            width: 42px; height: 42px; background: rgba(255,255,255,.15);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem; color: var(--gold); flex-shrink: 0;
+        }
+        .sitin-modal-title { font-size: 1rem; font-weight: 700; color: #fff; }
+        .sitin-modal-sub   { font-size: .76rem; color: rgba(255,255,255,.5); margin-top: 2px; }
+
+        /* Step bar */
+        .sitin-stepbar {
+            display: flex; align-items: center; padding: 14px 24px 0;
+        }
+        .sitin-snode {
+            display: flex; align-items: center; gap: 6px;
+            font-size: .78rem; font-weight: 600; color: var(--muted);
+        }
+        .sitin-scircle {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #e2e8f0; color: var(--muted);
+            display: flex; align-items: center; justify-content: center;
+            font-size: .72rem; font-weight: 800; flex-shrink: 0;
+            transition: background .2s, color .2s;
+        }
+        .sitin-snode.active .sitin-scircle { background: var(--blue); color: #fff; }
+        .sitin-snode.done   .sitin-scircle { background: var(--success); color: #fff; }
+        .sitin-snode.active span, .sitin-snode.done span { color: var(--navy); }
+        .sitin-sline {
+            flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; transition: background .3s;
+        }
+        .sitin-sline.done { background: var(--success); }
+
+        /* Panels */
+        .sitin-panel { display: none; }
+        .sitin-panel.active { display: block; }
+
+        /* Student banner */
+        .sitin-banner {
+            background: linear-gradient(135deg,#dbeafe,#ede9fe);
+            border-bottom: 1px solid var(--border);
+            padding: 13px 24px; display: flex; align-items: center; gap: 14px;
+        }
+        .sitin-avatar {
+            width: 44px; height: 44px; background: var(--navy); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem; color: var(--gold); flex-shrink: 0;
+        }
+        .sitin-sdet { flex: 1; }
+        .sitin-sname { font-size: .95rem; font-weight: 700; color: var(--navy); }
+        .sitin-smeta { display: flex; gap: 12px; margin-top: 3px; font-size: .74rem; color: var(--muted); }
+        .sitin-smeta i { color: var(--blue); margin-right: 3px; }
+        .sitin-sbadge { text-align: center; background: var(--navy); border-radius: 10px; padding: 6px 12px; flex-shrink: 0; }
+        .sitin-snum { font-size: 1.35rem; font-weight: 800; color: var(--gold); line-height: 1; }
+        .sitin-slbl { font-size: .63rem; color: rgba(255,255,255,.6); margin-top: 2px; white-space: nowrap; }
+
+        /* Step 1 body */
+        .sitin-s1 { padding: 16px 24px 0; }
+        .sitin-s1-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        /* Lab tiles */
+        .sitin-labs { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+        .sitin-lab-tile {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 3px; padding: 9px 4px;
+            border: 1.5px solid var(--border); border-radius: 9px;
+            background: #f8fafc; cursor: pointer; font-family: 'Sora', sans-serif;
+            transition: all .14s;
+        }
+        .sitin-lab-tile i    { font-size: .95rem; color: var(--blue); }
+        .sitin-lab-tile span { font-size: .72rem; font-weight: 700; color: var(--navy); }
+        .sitin-lab-tile:hover    { border-color: var(--blue); background: #eff6ff; }
+        .sitin-lab-tile.selected {
+            border-color: var(--blue); background: #dbeafe;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+        }
+
+        /* Current slot pill */
+        .sitin-slot-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 8px;
+            font-size: .77rem; font-weight: 600; margin-top: 10px;
+        }
+        .sitin-slot-pill.has-slot {
+            background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46;
+        }
+        .sitin-slot-pill.no-slot {
+            background: #fef3c7; border: 1px solid #fcd34d; color: #92400e;
+        }
+        .sitin-slot-pill i { flex-shrink: 0; }
+
+        /* Footer */
+        .sitin-footer {
+            display: flex; gap: 10px; justify-content: space-between;
+            align-items: center; padding: 12px 24px 20px;
+        }
+        .sitin-footer-r { display: flex; gap: 10px; }
+
+        /* Step 2: PC grid */
+        .sitin-pc-hdr {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 24px 6px;
+        }
+        .sitin-pc-title {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 700; font-size: .85rem; color: var(--navy);
+        }
+        .sitin-pc-title i { color: var(--blue); }
+        .sitin-pc-avail {
+            font-size: .72rem; font-weight: 600; color: var(--success);
+            background: #d1fae5; border: 1px solid #a7f3d0;
+            border-radius: 20px; padding: 3px 10px; white-space: nowrap;
+        }
+        .sitin-legend {
+            display: flex; gap: 10px; flex-wrap: wrap; padding: 2px 24px 8px;
+        }
+        .sitin-li {
+            display: flex; align-items: center; gap: 4px;
+            font-size: .68rem; color: var(--muted); font-weight: 600;
+        }
+        .sitin-ld { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+        .ld-free     { background:#d1fae5; border:1.5px solid #6ee7b7; }
+        .ld-inuse    { background:#fee2e2; border:1.5px solid #fca5a5; }
+        .ld-reserved { background:#fffbeb; border:1.5px solid #fcd34d; }
+        .ld-pending  { background:#f5f3ff; border:1.5px solid #c4b5fd; }
+        .ld-selected { background:#dbeafe; border:1.5px solid #93c5fd; }
+
+        .sitin-pc-wrap {
+            margin: 0 24px; border: 1px solid var(--border);
+            border-radius: 10px; background: #f8fafc;
+            min-height: 100px; position: relative;
+        }
+        .sitin-pc-loader {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            background: rgba(248,250,252,.92); font-size: .82rem; font-weight: 600;
+            color: var(--muted); z-index: 2; border-radius: 10px;
+            opacity: 0; pointer-events: none; transition: opacity .2s;
+        }
+        .sitin-pc-loader.on { opacity: 1; pointer-events: all; }
+        .sitin-pc-loader i  { color: var(--blue); }
+        .sitin-pc-grid {
+            display: grid; grid-template-columns: repeat(8,1fr); gap: 4px; padding: 8px;
+        }
+        .spc {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 1px; padding: 5px 2px; border-radius: 6px; border: 1.5px solid transparent;
+            cursor: pointer; font-family: 'Sora', system-ui, sans-serif;
+            transition: transform .12s, box-shadow .12s;
+        }
+        .spc i    { font-size: .88rem; }
+        .spc-num  { font-size: .64rem; font-weight: 800; line-height: 1; }
+        .spc-st   { font-size: .54rem; font-weight: 600; line-height: 1; }
+        .spc-free     { background:#f0fdf4; border-color:#86efac; color:#166534; }
+        .spc-free:hover:not(:disabled) { background:#dcfce7; border-color:#4ade80; transform:translateY(-2px); box-shadow:0 4px 10px rgba(16,185,129,.18); }
+        .spc-inuse    { background:#fef2f2; border-color:#fca5a5; color:#991b1b; cursor:not-allowed; opacity:.7; }
+        .spc-reserved { background:#fffbeb; border-color:#fcd34d; color:#92400e; cursor:not-allowed; opacity:.8; }
+        .spc-pending  { background:#f5f3ff; border-color:#c4b5fd; color:#5b21b6; cursor:not-allowed; opacity:.8; }
+        .spc-selected { background:#eff6ff; border-color:#3b82f6; color:#1e40af; box-shadow:0 0 0 3px rgba(59,130,246,.2); transform:translateY(-2px); }
+
+        .sitin-pc-selbar {
+            display: none; align-items: center; gap: 8px;
+            margin: 8px 24px 0; padding: 8px 12px;
+            background: #eff6ff; border: 1.5px solid #93c5fd;
+            border-radius: 8px; font-size: .8rem; font-weight: 600; color: #1e40af;
+        }
+        .sitin-pc-selbar i { color: #3b82f6; }
+        .sitin-desel {
+            margin-left: auto; background: none; border: none;
+            color: var(--danger); font-size: .74rem; font-weight: 700;
+            cursor: pointer; padding: 2px 6px; border-radius: 4px; font-family: inherit;
+        }
+        .sitin-desel:hover { background: #fee2e2; }
+    </style>
+</head>
+<body>
+
+<header class="topnav">
+    <a href="{{ url_for('admin_home') }}" class="topnav-brand">
+        <div class="brand-icon">
+            <img src="{{ url_for('static', filename='images/ucmainccslogo.png') }}" alt="UC CCS">
+        </div>
+        <div class="brand-text">
+            <span class="brand-title">University of Cebu</span>
+            <span class="brand-sub">CCS Admin Panel</span>
+        </div>
+    </a>
+
+    <nav class="topnav-links">
+        <a href="{{ url_for('admin_home') }}"             class="nav-link {% if request.endpoint=='admin_home'            %}active{% endif %}"><i class="fa-solid fa-house"></i><span>Home</span></a>
+        <a href="{{ url_for('admin_students') }}"         class="nav-link {% if request.endpoint=='admin_students'        %}active{% endif %}"><i class="fa-solid fa-users"></i><span>Students</span></a>
+        <a href="{{ url_for('admin_current_sitin') }}"    class="nav-link {% if request.endpoint=='admin_current_sitin'   %}active{% endif %}"><i class="fa-solid fa-desktop"></i><span>Sit-In</span></a>
+        <a href="{{ url_for('admin_sitin_records') }}"    class="nav-link {% if request.endpoint=='admin_sitin_records'   %}active{% endif %}"><i class="fa-solid fa-table-list"></i><span>Records</span></a>
+        <a href="{{ url_for('admin_sitin_reports') }}"    class="nav-link {% if request.endpoint=='admin_sitin_reports'   %}active{% endif %}"><i class="fa-solid fa-chart-bar"></i><span>Reports</span></a>
+        <a href="{{ url_for('admin_feedback_reports') }}" class="nav-link {% if request.endpoint=='admin_feedback_reports'%}active{% endif %}">
+            <i class="fa-solid fa-comments"></i><span>Feedback</span>
+            {% if new_feedbacks and new_feedbacks > 0 %}
+            <span class="nav-badge">{{ new_feedbacks if new_feedbacks < 100 else '99+' }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('admin_reservation') }}" class="nav-link {% if request.endpoint=='admin_reservation'%}active{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i><span>Reservation</span>
+            {% if new_reservations and new_reservations > 0 %}
+            <span class="nav-badge">{{ new_reservations if new_reservations < 100 else '99+' }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('admin_analytics') }}" class="nav-link {% if request.endpoint=='admin_analytics'%}active{% endif %}"><i class="fa-solid fa-chart-pie"></i><span>Analytics</span></a>
+    </nav>
+
+    <div class="topnav-right">
+        <div class="topnav-search">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="navSearchInput" placeholder="Search student…" autocomplete="off">
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+        </a>
+    </div>
+</header>
+
+<main class="page-content">
+
+    <!-- Search modal -->
+    <div class="modal-backdrop" id="searchModalBackdrop">
+        <div class="modal">
+            <div class="modal-title">
+                <i class="fa-solid fa-magnifying-glass" style="color:var(--blue)"></i> Search Student
+            </div>
+            <div class="form-group">
+                <label>ID Number or Name</label>
+                <input type="text" id="searchQuery" placeholder="Enter ID number or student name…">
+            </div>
+            <div id="searchError" class="flash flash-error" style="display:none;margin-bottom:12px;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="searchErrorMsg">No student found.</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeSearchModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="doSearch()">
+                    <i class="fa-solid fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sit-In modal (2 steps) -->
+    <div class="modal-backdrop" id="sitInModalBackdrop">
+        <div class="modal sitin-modal">
+
+            <div class="sitin-modal-header">
+                <div class="sitin-modal-hicon"><i class="fa-solid fa-desktop"></i></div>
+                <div>
+                    <div class="sitin-modal-title">Sit-In Registration</div>
+                    <div class="sitin-modal-sub" id="sitinModalSub">Select purpose and lab room</div>
+                </div>
+            </div>
+
+            <div class="sitin-stepbar">
+                <div class="sitin-snode active" id="sitin-sn1">
+                    <div class="sitin-scircle" id="sitin-sc1">1</div>
+                    <span>Details</span>
+                </div>
+                <div class="sitin-sline" id="sitin-sl1"></div>
+                <div class="sitin-snode" id="sitin-sn2">
+                    <div class="sitin-scircle" id="sitin-sc2">2</div>
+                    <span>Select PC</span>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('admin_sitin') }}" id="sitinForm">
+                <input type="hidden" name="student_id" id="sitin_student_id">
+                <input type="hidden" name="pc_number"  id="sitin_pc_number" value="">
+                <input type="hidden" name="lab"        id="sitin_lab_hidden">
+                <input type="hidden" name="purpose"    id="sitin_purpose_hidden">
+
+                <!-- ═══ STEP 1: Purpose + Lab ═══ -->
+                <div class="sitin-panel active" id="sitinPanel1">
+
+                    <div class="sitin-banner">
+                        <div class="sitin-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                        <div class="sitin-sdet">
+                            <div class="sitin-sname"  id="sitin_display_name">—</div>
+                            <div class="sitin-smeta">
+                                <span><i class="fa-solid fa-id-card"></i><span id="sitin_display_id">—</span></span>
+                                <span><i class="fa-solid fa-graduation-cap"></i><span id="sitin_display_course">—</span></span>
+                            </div>
+                        </div>
+                        <div class="sitin-sbadge">
+                            <div class="sitin-snum" id="sitin_display_sessions">—</div>
+                            <div class="sitin-slbl">Sessions Left</div>
+                        </div>
+                    </div>
+
+                    <div class="sitin-s1">
+                        <div class="sitin-s1-grid">
+
+                            <!-- Purpose -->
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
+                                    <i class="fa-solid fa-bullseye" style="color:var(--blue);margin-right:4px;"></i>Purpose
+                                </label>
+                                <select id="sitin_purpose_sel" style="margin-top:5px;" required>
+                                    <option value="" disabled selected>Select purpose…</option>
+                                    <option value="Assignment">📝 Assignment</option>
+                                    <option value="Activity">🎯 Activity</option>
+                                    <option value="Project">🛠️ Project</option>
+                                    <option value="Networking">🌐 Networking</option>
+                                    <option value="Capstone">🎓 Capstone</option>
+                                    <option value="Practice / Self-Study">📖 Practice / Self-Study</option>
+                                    <option value="Other">💡 Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Lab -->
+                            <div>
+                                <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px;color:var(--muted);font-weight:700;">
+                                    <i class="fa-solid fa-door-open" style="color:var(--blue);margin-right:4px;"></i>Laboratory
+                                </label>
+                                <div class="sitin-labs" id="sitinLabsGrid">
+                                    {% for lab in ['524','526','528','530','542','544'] %}
+                                    <button type="button" class="sitin-lab-tile" data-lab="{{ lab }}">
+                                        <i class="fa-solid fa-desktop"></i>
+                                        <span>{{ lab }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Auto-detected slot info -->
+                        <div id="sitinSlotInfo"></div>
+
+                    </div>
+
+                    <div class="sitin-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeSitInModal()">
+                            <i class="fa-solid fa-xmark"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" id="sitin_next_btn"
+                                onclick="sitinGoStep2()" disabled>
+                            Next <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ═══ STEP 2: PC Grid ═══ -->
+                <div class="sitin-panel" id="sitinPanel2">
+
+                    <div class="sitin-pc-hdr">
+                        <div class="sitin-pc-title">
+                            <i class="fa-solid fa-desktop"></i>
+                            Lab <span id="sitinPCLabLabel">—</span>
+                            <span id="sitinPCSlotLabel" style="font-size:.72rem;color:var(--muted);font-weight:500;margin-left:4px;"></span>
+                        </div>
+                        <span class="sitin-pc-avail" id="sitinPCAvailCount">Loading…</span>
+                    </div>
+
+                    <div class="sitin-legend">
+                        <div class="sitin-li"><div class="sitin-ld ld-free"></div>Available</div>
+                        <div class="sitin-li"><div class="sitin-ld ld-inuse"></div>In Use / Schedule</div>
+                        <div class="sitin-li"><div class="sitin-ld ld-reserved"></div>Reserved</div>
+                        <div class="sitin-li"><div class="sitin-ld ld-pending"></div>Pending</div>
+                        <div class="sitin-li"><div class="sitin-ld ld-selected"></div>Selected</div>
+                    </div>
+
+                    <div class="sitin-pc-wrap">
+                        <div class="sitin-pc-loader on" id="sitinPCLoader">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <span>Checking availability…</span>
+                        </div>
+                        <div class="sitin-pc-grid" id="sitinPCGrid"></div>
+                    </div>
+
+                    <div class="sitin-pc-selbar" id="sitinPCSelBar">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span id="sitinPCSelLabel">—</span>
+                        <button type="button" class="sitin-desel" onclick="sitinDeselectPC()">Deselect</button>
+                    </div>
+
+                    <div class="sitin-footer">
+                        <button type="button" class="btn btn-outline" onclick="sitinGoStep1()">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <div class="sitin-footer-r">
+                            <button type="button" class="btn btn-outline" onclick="closeSitInModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="sitinSubmitBtn" disabled>
+                                <i class="fa-solid fa-right-to-bracket"></i> Confirm Sit-In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="flash-area">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">
+                    <i class="fa-solid {% if category=='success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+    {% block content %}{% endblock %}
+</main>
+
+<script>
+    var SEARCH_API_URL  = "{{ url_for('admin_search_api') }}";
+    var CHECK_AVAIL_URL = "{{ url_for('check_availability') }}";
+
+    document.getElementById('navSearchInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('searchQuery').value = this.value;
+            doSearch();
+        }
+    });
+</script>
+
+{% block footer %}
+<footer class="page-footer">
+    &copy; BELLITA 2026 <span>University of Cebu</span> &mdash; College of Computer Studies Sit-in Monitoring System
+</footer>
+{% endblock %}
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

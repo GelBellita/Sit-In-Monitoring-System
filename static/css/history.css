@@ -1,0 +1,98 @@
+.history-page {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.record-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 50px;
+}
+
+.table-wrap { overflow-x: auto; }
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.history-table thead tr {
+    background: #f7f9fc;
+    border-bottom: 2px solid #eaecef;
+}
+
+.history-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+}
+
+.history-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+}
+
+.history-table tbody tr:hover { background: #fafbfd; }
+
+.history-table td { padding: 14px 16px; color: #333; }
+
+.row-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: #aaa;
+    width: 40px;
+}
+
+.lab-badge {
+    display: inline-block;
+    background: #001d57;
+    color: #F5A623;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+}
+
+.purpose-cell { color: #555; max-width: 200px; }
+
+.time-cell {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: #666;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 50px;
+}
+
+.status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-active    { background: #d1fae5; color: #065f46; }
+.status-active::before { background: #10b981; }
+
+.status-completed { background: #e0e7ff; color: #3730a3; }
+.status-completed::before { background: #6366f1; }
+
+.status-cancelled { background: #fee2e2; color: #991b1b; }
+.status-cancelled::before { background: #ef4444; }

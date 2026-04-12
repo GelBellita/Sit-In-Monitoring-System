@@ -1,0 +1,96 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Home — CCS Admin{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- Left: Dashboard Side Panel -->
+    <aside class="dashboard-panel">
+        <div class="page-title"><i class="fa-solid fa-house"></i> Dashboard </div>
+        <div class="stats-column">
+            <div class="stat-card blue">
+                <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
+                <div>
+                    <div class="stat-num">{{ total_registered }}</div>
+                    <div class="stat-lbl">Students Registered</div>
+                </div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon green"><i class="fa-solid fa-desktop"></i></div>
+                <div>
+                    <div class="stat-num">{{ currently_sitin }}</div>
+                    <div class="stat-lbl">Currently Sit-In</div>
+                </div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-icon amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div>
+                    <div class="stat-num">{{ total_sitin }}</div>
+                    <div class="stat-lbl">Total Sit-In (All Time)</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Right: Announcements Panel -->
+    <!-- FIX: original was missing closing </div> for .card-body, </div> for
+         .card, and </section> — causing Jinja block inheritance to break and
+         everything after the announcements list to be swallowed. -->
+    <section class="announcements-panel">
+        <div class="card">
+            <div class="card-header"><i class="fa-solid fa-bullhorn"></i> Announcements</div>
+            <div class="card-body">
+
+                <!-- Post form -->
+                <form method="POST" action="{{ url_for('admin_announcement') }}" style="margin-bottom:24px;">
+                    <div class="form-group">
+                        <label>Title <span style="color:var(--muted);font-weight:400;text-transform:none">(optional)</span></label>
+                        <input type="text" name="title" placeholder="Announcement title…">
+                    </div>
+                    <div class="form-group">
+                        <label>Content <span style="color:var(--danger)">*</span></label>
+                        <textarea name="content" placeholder="Write your announcement here…" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Post Announcement</button>
+                </form>
+
+                <hr style="border:none;border-top:1px solid var(--border);margin-bottom:20px;">
+
+                <h3 style="font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:14px;">
+                    <i class="fa-solid fa-list" style="color:var(--blue)"></i> Posted Announcements
+                </h3>
+
+                {% if announcements %}
+                    {% for ann in announcements %}
+                    <div class="posted-announcement">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                            <div>
+                                <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px;">
+                                    <i class="fa-solid fa-user-shield"></i> {{ ann['createdBy'] }}
+                                    &nbsp;|&nbsp;
+                                    <i class="fa-regular fa-calendar"></i> {{ ann['createdAt'][:10] }}
+                                </div>
+                                {% if ann['title'] %}
+                                <div style="font-weight:700;color:var(--navy);margin-bottom:5px;">{{ ann['title'] }}</div>
+                                {% endif %}
+                                <div style="font-size:.88rem;color:var(--text);">{{ ann['content'] }}</div>
+                            </div>
+                            <form method="POST" action="{{ url_for('admin_delete_announcement', ann_id=ann['id']) }}" onsubmit="return confirm('Delete this announcement?')">
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fa-regular fa-bell-slash"></i>
+                        <p>No announcements yet.</p>
+                    </div>
+                {% endif %}
+
+            </div><!-- /.card-body -->
+        </div><!-- /.card -->
+    </section>
+
+</div><!-- /.dashboard-container -->
+{% endblock %}

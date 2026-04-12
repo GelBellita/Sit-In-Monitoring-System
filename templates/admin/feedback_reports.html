@@ -1,0 +1,115 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Feedback Reports — CCS Admin{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/feedback_reports.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="feedback-page">
+    <div class="feedback-card">
+
+        <div class="feedback-card-header">
+            <div class="feedback-header-left">
+                <div class="feedback-header-icon">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+                <div>
+                    <div class="feedback-title">Feedback Reports</div>
+                    <div class="feedback-sub">Student feedback submitted after lab sessions</div>
+                </div>
+            </div>
+            <div class="feedback-header-right">
+                <div class="feedback-count-pill">
+                    <span>{{ feedbacks|length }}</span>
+                    response{% if feedbacks|length != 1 %}s{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="feedback-toolbar">
+            <div class="toolbar-left">
+                <button class="btn-print" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Print
+                </button>
+            </div>
+            <div class="toolbar-right">
+                <div class="filter-wrap">
+                    <i class="fa-solid fa-magnifying-glass filter-icon"></i>
+                    <input type="text" id="filterInput"
+                           placeholder="Filter by ID, name, lab, message…">
+                </div>
+            </div>
+        </div>
+
+        <div class="feedback-table-wrap">
+            {% if feedbacks %}
+            <table class="feedback-table" id="feedbackTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Laboratory</th>
+                        <th>Rating</th>
+                        <th>Date Submitted</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTbody">
+                    {% for f in feedbacks %}
+                    <tr class="fb-row"
+                        data-id="{{ f['studentId'] }}"
+                        data-name="{{ f['firstName'] }} {{ f['lastName'] }}"
+                        data-lab="{{ f['labRoom'] or '' }}"
+                        data-date="{{ f['timeIn'][:10] if f['timeIn'] else '' }}"
+                        data-msg="{{ f['feedback'] or '' }}">
+                        <td class="row-num">{{ loop.index }}</td>
+                        <td class="id-cell">{{ f['studentId'] }}</td>
+                        <td class="name-cell">{{ f['lastName'] }}, {{ f['firstName'] }}</td>
+                        <td><span class="lab-badge">Lab {{ f['labRoom'] }}</span></td>
+                        <td>
+                            <div class="star-display-admin">
+                                {% set rating = f['feedbackRating'] if f['feedbackRating'] else 0 %}
+                                {% for i in range(1, 6) %}
+                                    {% if i <= rating %}
+                                        <span>★</span>
+                                    {% else %}
+                                        <span class="empty">★</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="date-cell">
+                            {% if f['timeIn'] %}{{ f['timeIn'][:10] }}{% else %}—{% endif %}
+                        </td>
+                        <td class="msg-cell">{{ f['feedback'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-feedback">
+                <i class="fa-regular fa-comment-dots"></i>
+                <p>No feedback submitted yet</p>
+                <small>Student feedback will appear here once students rate their completed sessions.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="feedback-footer">
+            <span id="footerInfo">
+                Showing all {{ feedbacks|length }}
+                response{% if feedbacks|length != 1 %}s{% endif %}
+            </span>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/feedback_reports.js') }}"></script>
+{% endblock %}

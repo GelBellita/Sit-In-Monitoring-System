@@ -1,0 +1,289 @@
+/* ── sitin_records.css ───────────────────────────────────────────────────────
+   Place in: static/css/adminCss/sitin_records.css
+─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Page wrapper ─────────────────────────────────────── */
+.records-page {
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.records-page-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1e2a3a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.records-page-title i { color: #1e2a3a; }
+
+/* ── Chart card ───────────────────────────────────────── */
+.chart-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+    border: 1px solid #e8ecf0;
+}
+
+.chart-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 16px 22px;
+    background: #1a2744;
+    color: #fff;
+}
+
+.chart-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.chart-card-subtitle {
+    font-size: 0.78rem;
+    opacity: .65;
+    margin-left: 24px;
+}
+
+.chart-legend-hint {
+    font-size: 0.74rem;
+    opacity: .6;
+    background: rgba(255,255,255,.1);
+    border-radius: 6px;
+    padding: 4px 10px;
+    white-space: nowrap;
+    align-self: center;
+}
+
+.chart-body {
+    padding: 24px 28px 20px;
+    position: relative;
+    height: 320px;
+    background: #fff;
+}
+
+/* ── Table card ───────────────────────────────────────── */
+.table-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+    border: 1px solid #e8ecf0;
+}
+
+.table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #1a2744;
+    color: #fff;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.table-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.record-total {
+    font-size: 0.76rem;
+    opacity: .65;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.table-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.search-records {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,.12);
+    border-radius: 8px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,.15);
+}
+.search-records i {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,.6);
+}
+.search-records input {
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 0.82rem;
+    outline: none;
+    width: 180px;
+}
+.search-records input::placeholder { color: rgba(255,255,255,.45); }
+
+/* ── Table ────────────────────────────────────────────── */
+.records-table-wrap {
+    overflow-x: auto;
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+.records-table thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+}
+
+.records-table thead tr {
+    background: #f0f3f8;
+}
+
+.records-table th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #4a5568;
+    white-space: nowrap;
+    background: #f0f3f8;
+    border-bottom: 2px solid #dce3ed;
+}
+
+.records-table tbody tr {
+    border-bottom: 1px solid #f0f3f8;
+    transition: background .12s;
+}
+.records-table tbody tr:hover { background: #f7f9fc; }
+
+.records-table td {
+    padding: 10px 14px;
+    color: #2d3748;
+    vertical-align: middle;
+}
+
+.row-num {
+    font-weight: 600;
+    color: #a0aec0;
+    font-size: 0.78rem;
+}
+
+.id-link {
+    color: #2b6cb0;
+    font-weight: 600;
+    font-size: 0.82rem;
+}
+
+.name-cell {
+    font-weight: 600;
+    color: #1a2744;
+    white-space: nowrap;
+}
+
+.course-tag {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 5px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    background: #ebf4ff;
+    color: #2b6cb0;
+    white-space: nowrap;
+}
+
+.year-cell {
+    font-size: 0.82rem;
+    color: #4a5568;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.purpose-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f0f3ff;
+    color: #3b5bdb;
+    white-space: nowrap;
+}
+
+.lab-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #e6f4ea;
+    color: #276749;
+    white-space: nowrap;
+}
+
+.time-cell {
+    font-size: 0.8rem;
+    color: #718096;
+    white-space: nowrap;
+}
+
+.date-cell {
+    font-size: 0.8rem;
+    color: #718096;
+    white-space: nowrap;
+}
+
+/* ── Table footer ─────────────────────────────────────── */
+.table-footer {
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    border-top: 1px solid #f0f3f8;
+    background: #fafbfc;
+}
+
+.pagination-info {
+    font-size: 0.8rem;
+    color: #a0aec0;
+}
+
+/* ── Empty state ──────────────────────────────────────── */
+.empty-records {
+    text-align: center;
+    padding: 52px 20px;
+    color: #a0aec0;
+}
+.empty-records i {
+    font-size: 2.4rem;
+    margin-bottom: 12px;
+    display: block;
+}
+.empty-records p {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: #718096;
+}
+.empty-records small { font-size: 0.82rem; }
+
+/* ── Hidden rows ──────────────────────────────────────── */
+.record-row.hidden { display: none; }

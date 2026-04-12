@@ -1,0 +1,295 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Students — CCS Admin{% endblock %}
+
+{% block content %}
+
+<div class="students-header">
+    <div class="students-header-left">
+        <div class="students-title-icon"><i class="fa-solid fa-users"></i></div>
+        <div>
+            <div class="students-title">Students Information</div>
+            <div class="students-sub">Manage all registered students</div>
+        </div>
+    </div>
+    <div class="students-header-right">
+        <div class="toolbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="tableSearch" placeholder="Search students…" oninput="filterTable()">
+        </div>
+
+        <button class="btn-add-student" onclick="document.getElementById('addStudentBackdrop').classList.add('open')">
+            <i class="fa-solid fa-user-plus"></i> Add Student
+        </button>
+
+        <form method="POST" action="{{ url_for('admin_reset_sessions') }}" onsubmit="return confirm('Reset ALL student sessions?')">
+            <button type="submit" class="btn btn-warning">
+                <i class="fa-solid fa-rotate"></i> Reset All Sessions
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table id="studentsTable">
+            <thead>
+                <tr>
+                    <th><i class="fa-solid fa-hashtag" style="opacity:.6;margin-right:6px;"></i>ID Number</th>
+                    <th><i class="fa-solid fa-user" style="opacity:.6;margin-right:6px;"></i>Name</th>
+                    <th><i class="fa-solid fa-layer-group" style="opacity:.6;margin-right:6px;"></i>Year Level</th>
+                    <th><i class="fa-solid fa-graduation-cap" style="opacity:.6;margin-right:6px;"></i>Course</th>
+                    <th><i class="fa-solid fa-envelope" style="opacity:.6;margin-right:6px;"></i>Email</th>
+                    <th><i class="fa-solid fa-clock" style="opacity:.6;margin-right:6px;"></i>Sessions Left</th>
+                    <th><i class="fa-solid fa-sliders" style="opacity:.6;margin-right:6px;"></i>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td><span class="student-id">{{ s['idNumber'] }}</span></td>
+                    <td>
+                        <div class="student-name-cell">
+                            <span>{{ s['firstName'] }} {{ s['lastName'] }}</span>
+                        </div>
+                    </td>
+                    <td><span class="year-pill">Year {{ s['yearLevel'] }}</span></td>
+                    <td><span class="badge badge-info">{{ s['course'] }}</span></td>
+                    <td style="color:var(--muted);font-size:.82rem;">{{ s['email'] }}</td>
+                    <td>
+                        {% set sess = (s['sessions'] | int) if s['sessions'] is not none else 30 %}
+                        <span class="badge {% if sess > 10 %}badge-success{% elif sess > 0 %}badge-info{% else %}badge-danger{% endif %}">
+                            {{ sess }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('admin_edit_student', student_id=s['idNumber']) }}" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </a>
+                            <form method="POST" action="{{ url_for('admin_delete_student', student_id=s['idNumber']) }}" onsubmit="return confirm('Delete this student?')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fa-solid fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-users-slash"></i>
+                            <p>No students registered yet.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Add Student Modal ──────────────────────────────────────────── -->
+<div class="add-student-backdrop" id="addStudentBackdrop">
+    <div class="add-student-modal">
+
+        <div class="add-student-modal-header">
+            <div class="add-student-modal-header-left">
+                <i class="fa-solid fa-user-plus"></i> Add New Student
+            </div>
+            <button class="add-student-modal-close"
+                    onclick="document.getElementById('addStudentBackdrop').classList.remove('open')">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="add-student-modal-body">
+            <form method="POST" action="{{ url_for('admin_add_student') }}">
+
+                <!-- 1. ID Number (most unique identifier - placed first) -->
+                <div class="asm-row">
+                    <div class="asm-field asm-full">
+                        <label>ID Number *</label>
+                        <input type="text" name="idNumber" required>
+                    </div>
+                </div>
+
+                <!-- 2. Name Fields - Logical order: Last, First, Middle -->
+                <div class="asm-row asm-triple">
+                    <div class="asm-field">
+                        <label>Last Name *</label>
+                        <input type="text" name="lastName" required>
+                    </div>
+                    <div class="asm-field">
+                        <label>First Name *</label>
+                        <input type="text" name="firstName" required>
+                    </div>
+                    <div class="asm-field">
+                        <label>Middle Name</label>
+                        <input type="text" name="middleName" placeholder="(optional)">
+                    </div>
+                </div>
+
+                <!-- 3. Course and Year Level - Side by side as requested -->
+                <div class="asm-row">
+                    <div class="asm-field">
+                        <label>Course *</label>
+                        <select name="course" required>
+                            <option value="" disabled selected>Select course</option>
+                            <optgroup label="🖥️ College of Computer Studies">
+                                <option value="BSIT">BS Information Technology</option>
+                                <option value="BSCS">BS Computer Science</option>
+                            </optgroup>
+                            <optgroup label="⚙️ College of Engineering">
+                                <option value="BSCE">BS Civil Engineering</option>
+                                <option value="BSEE">BS Electrical Engineering</option>
+                                <option value="BSME">BS Mechanical Engineering</option>
+                                <option value="BSIE">BS Industrial Engineering</option>
+                                <option value="BSECE">BS Electronics Engineering</option>
+                            </optgroup>
+                            <optgroup label="💼 College of Business and Accountancy">
+                                <option value="BSA">BS Accountancy</option>
+                                <option value="BSBA-FM">BSBA - Financial Management</option>
+                                <option value="BSBA-MM">BSBA - Marketing Management</option>
+                                <option value="BSBA-HRM">BSBA - Human Resource Management</option>
+                                <option value="BSBA-OM">BSBA - Operations Management</option>
+                                <option value="BSMA">BS Management Accounting</option>
+                                <option value="BSEntrep">BS Entrepreneurship</option>
+                            </optgroup>
+                            <optgroup label="📚 College of Education">
+                                <option value="BEED">Bachelor of Elementary Education</option>
+                                <option value="BSED-ENG">BSED - English</option>
+                                <option value="BSED-MATH">BSED - Mathematics</option>
+                                <option value="BSED-SCI">BSED - Science</option>
+                                <option value="BSED-FIL">BSED - Filipino</option>
+                                <option value="BSED-SOSHIL">BSED - Social Studies</option>
+                                <option value="BPED">BS Physical Education</option>
+                            </optgroup>
+                            <optgroup label="🏥 College of Nursing">
+                                <option value="BSN">BS Nursing</option>
+                            </optgroup>
+                            <optgroup label="🎨 College of Arts and Sciences">
+                                <option value="ABCOM">AB Communication</option>
+                                <option value="ABPOLSCI">AB Political Science</option>
+                                <option value="BSPSY">BS Psychology</option>
+                                <option value="BSBIO">BS Biology</option>
+                                <option value="BSMATH">BS Mathematics</option>
+                            </optgroup>
+                            <optgroup label="🏛️ College of Architecture and Fine Arts">
+                                <option value="BSARCH">BS Architecture</option>
+                                <option value="BSID">BS Interior Design</option>
+                                <option value="BSFA">BS Fine Arts</option>
+                            </optgroup>
+                            <optgroup label="🏨 College of Tourism and Hospitality">
+                                <option value="BSTM">BS Tourism Management</option>
+                                <option value="BSHM">BS Hospitality Management</option>
+                            </optgroup>
+                            <optgroup label="⚖️ College of Criminal Justice">
+                                <option value="BSCRIM">BS Criminology</option>
+                            </optgroup>
+                            <optgroup label="💊 College of Pharmacy">
+                                <option value="BSPHAR">BS Pharmacy</option>
+                            </optgroup>
+                            <optgroup label="⚓ College of Maritime Education">
+                                <option value="BSMARE">BS Marine Engineering</option>
+                                <option value="BSMT">BS Marine Transportation</option>
+                            </optgroup>
+                            <optgroup label="⚕️ College of Allied Medical Sciences">
+                                <option value="BSMT-MED">BS Medical Technology</option>
+                                <option value="BSRT">BS Radiologic Technology</option>
+                                <option value="BSOT">BS Occupational Therapy</option>
+                                <option value="BSPT">BS Physical Therapy</option>
+                            </optgroup>
+                            <optgroup label="📜 College of Law">
+                                <option value="JD">Juris Doctor</option>
+                            </optgroup>
+                            <optgroup label="🎓 Senior High School">
+                                <option value="SHS-STEM">SHS - STEM</option>
+                                <option value="SHS-ABM">SHS - ABM</option>
+                                <option value="SHS-HUMSS">SHS - HUMSS</option>
+                                <option value="SHS-TVL">SHS - TVL</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="asm-field">
+                        <label>Year Level *</label>
+                        <select name="yearLevel" required>
+                            <option value="" disabled selected>Select year</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 4. Contact Information -->
+                <div class="asm-row">
+                    <div class="asm-field">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                </div>
+
+                <!-- 5. Address -->
+                <div class="asm-row asm-single">
+                    <div class="asm-field">
+                        <label>Address</label>
+                        <input type="text" name="address" placeholder="House No., Street, City, Province (optional)">
+                    </div>
+                </div>
+
+                <div class="asm-divider"></div>
+
+                <!-- 6. Account Security -->
+                <div class="asm-row">
+                    <div class="asm-field">
+                        <label>Password *</label>
+                        <input type="password" name="password" required placeholder="••••••••">
+                    </div>
+                    <div class="asm-field">
+                        <label>Confirm Password *</label>
+                        <input type="password" name="confirmPassword" required placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="asm-actions">
+                    <button type="button" class="asm-cancel"
+                            onclick="document.getElementById('addStudentBackdrop').classList.remove('open')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="asm-submit">
+                        <i class="fa-solid fa-user-plus"></i> Add Student
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function filterTable() {
+        const q = document.getElementById('tableSearch').value.toLowerCase();
+        document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('addStudentBackdrop').addEventListener('click', function (e) {
+        if (e.target === this) this.classList.remove('open');
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape')
+            document.getElementById('addStudentBackdrop').classList.remove('open');
+    });
+</script>
+{% endblock %}

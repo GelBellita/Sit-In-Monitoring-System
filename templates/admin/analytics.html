@@ -1,0 +1,330 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Analytics — CCS Admin{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{# tojson WITHOUT | e — tojson is already HTML-safe; adding | e double-escapes quotes and breaks JSON.parse() #}
+<script id="chartData" type="application/json">
+{
+    "lab_visits":     {{ lab_visits      | tojson }},
+    "purpose_per_lab": {{ purpose_per_lab | tojson }},
+    "hours_target":   {{ hours_target }}
+}
+</script>
+
+<div class="analytics-page">
+
+    <div class="analytics-header">
+        <div class="analytics-header-left">
+            <div class="analytics-icon"><i class="fa-solid fa-chart-pie"></i></div>
+            <div>
+                <div class="analytics-title">Lab Analytics</div>
+                <div class="analytics-sub">Insights on sit-in usage, lab activity &amp; student performance</div>
+            </div>
+        </div>
+        <div class="analytics-header-right">
+            <button class="btn-print-analytics" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Print / Export PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="analytics-row-2">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <i class="fa-solid fa-building"></i>
+                <div>
+                    <div class="chart-card-title">Most Visited Laboratories</div>
+                    <div class="chart-card-sub">Total sit-ins &amp; cumulative hours per lab</div>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="labVisitsChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <i class="fa-solid fa-bullseye"></i>
+                <div>
+                    <div class="chart-card-title">Most Common Purpose per Lab</div>
+                    <div class="chart-card-sub">Top reasons students use each laboratory</div>
+                </div>
+            </div>
+            <div class="chart-wrap"><canvas id="purposeChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="analytics-row-3">
+        <div class="chart-card chart-card-donut">
+            <div class="chart-card-header">
+                <i class="fa-solid fa-clock"></i>
+                <div>
+                    <div class="chart-card-title">Total Hours by Lab</div>
+                    <div class="chart-card-sub">Proportion of total session time per lab</div>
+                </div>
+            </div>
+            <div class="chart-wrap donut-wrap"><canvas id="hoursDonutChart"></canvas></div>
+        </div>
+
+        <div class="quick-stats-card">
+            <div class="chart-card-header" style="padding-bottom:12px;">
+                <i class="fa-solid fa-gauge-high"></i>
+                <div>
+                    <div class="chart-card-title">Quick Stats</div>
+                    <div class="chart-card-sub">Session summary</div>
+                </div>
+            </div>
+            {% set total_hours  = namespace(v=0) %}
+            {% set total_visits = namespace(v=0) %}
+            {% for lab in lab_visits %}
+                {% set total_hours.v  = total_hours.v  + lab['total_minutes'] %}
+                {% set total_visits.v = total_visits.v + lab['total_visits']  %}
+            {% endfor %}
+            <div class="qs-grid">
+                <div class="qs-item qs-blue">
+                    <div class="qs-num">{{ total_visits.v }}</div>
+                    <div class="qs-lbl">Total Sit-ins</div>
+                </div>
+                <div class="qs-item qs-green">
+                    <div class="qs-num">{{ "%.1f"|format(total_hours.v / 60) }}</div>
+                    <div class="qs-lbl">Total Hours</div>
+                </div>
+                <div class="qs-item qs-amber">
+                    <div class="qs-num">{{ lab_visits|length }}</div>
+                    <div class="qs-lbl">Active Labs</div>
+                </div>
+                <div class="qs-item qs-purple">
+                    <div class="qs-num">{{ leaderboard|length }}</div>
+                    <div class="qs-lbl">Ranked Students</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="leaderboard-card">
+        <div class="leaderboard-header">
+            <div class="leaderboard-header-left">
+                <div class="leaderboard-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div>
+                    <div class="leaderboard-title">Top 10 Student Leaderboard</div>
+                    <div class="leaderboard-sub">
+                        Composite: 50% admin rating · 30% total hours · 20% task completion
+                        &nbsp;·&nbsp; <em>Click a row to see exactly how the score was calculated</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if leaderboard %}
+        <div class="leaderboard-table-wrap">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student</th>
+                        <th>Sessions</th>
+                        <th>Admin Rating</th>
+                        <th>Total Hours</th>
+                        <th>Task Rate</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in leaderboard %}
+                    <tr class="lb-row {% if loop.index <= 3 %}lb-top3{% endif %}"
+                        data-student='{{ {
+                            "firstName":          s["firstName"],
+                            "lastName":           s["lastName"],
+                            "course":             s["course"],
+                            "yearLevel":          s["yearLevel"],
+                            "total_sessions":     s["total_sessions"],
+                            "total_admin_rating": s["total_admin_rating"],
+                            "total_minutes":      s["total_minutes"],
+                            "tasks_done":         s["tasks_done"],
+                            "task_rate":          s["task_rate"],
+                            "hours_norm":         s["hours_norm"],
+                            "rating_norm":        s["rating_norm"],
+                            "composite":          s["composite"]
+                        } | tojson }}'>
+                        <td>
+                            <div class="rank-badge rank-{{ loop.index }}">
+                                {% if loop.index == 1 %}🥇
+                                {% elif loop.index == 2 %}🥈
+                                {% elif loop.index == 3 %}🥉
+                                {% else %}{{ loop.index }}{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="lb-student-cell">
+                                <div class="lb-avatar">{{ s['firstName'][0] }}{{ s['lastName'][0] }}</div>
+                                <div>
+                                    <div class="lb-name">{{ s['lastName'] }}, {{ s['firstName'] }}</div>
+                                    <div class="lb-meta">{{ s['course'] }} · {{ s['yearLevel'] }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="lb-num">{{ s['total_sessions'] }}</td>
+                        <td>
+                            <div class="lb-rating-cell">
+                                <span class="lb-num">{{ s['total_admin_rating'] }}★</span>
+                                <span class="lb-pts-hint">= {{ "%.2f"|format(s['rating_norm']) }} pts</span>
+                            </div>
+                        </td>
+                        <td class="lb-num">{{ "%.1f"|format(s['total_minutes'] / 60) }}h</td>
+                        <td>
+                            <div class="lb-taskrate">
+                                <div class="taskrate-bar">
+                                    <div class="taskrate-fill" data-rate="{{ s['task_rate'] }}"></div>
+                                </div>
+                                <span class="lb-num">{{ s['task_rate'] }}%</span>
+                            </div>
+                        </td>
+                        <td><span class="score-badge">{{ s['composite'] }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:48px">
+            <i class="fa-solid fa-trophy"></i>
+            <p>No data yet</p>
+            <small>Leaderboard will populate once students have sit-in sessions.</small>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<style>
+/* ── Leaderboard Modal ─────────────────────────────────────────────────────── */
+.lb-modal-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(10,15,30,.65); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.lb-modal-box {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.25);
+    width: 100%; max-width: 540px; max-height: 90vh;
+    overflow-y: auto; animation: lbIn .2s ease;
+}
+@keyframes lbIn { from { opacity:0; transform:translateY(16px) scale(.97) } to { opacity:1; transform:none } }
+
+.lb-modal-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 22px 16px; border-bottom: 1px solid #f0f3f8; position: relative;
+}
+.lb-modal-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: #1a2744; color: #F5A623;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 800; flex-shrink: 0;
+}
+.lb-modal-name { font-size: 1rem; font-weight: 800; color: #1a2744; }
+.lb-modal-meta { font-size: 0.74rem; color: #94a3b8; margin-top: 2px; }
+.lb-modal-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 30px; height: 30px; border: none; background: #f1f5f9;
+    border-radius: 50%; font-size: 1.1rem; cursor: pointer; color: #64748b;
+    display: flex; align-items: center; justify-content: center;
+}
+.lb-modal-close:hover { background: #e2e8f0; color: #1a2744; }
+
+.lb-modal-hero {
+    text-align: center; padding: 20px 20px 16px; border-bottom: 1px solid #f0f3f8;
+    background: linear-gradient(135deg, #f8faff, #f0f4ff);
+}
+.lb-modal-composite {
+    font-size: 3.2rem; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, #1a2744, #3b5bdb);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.lb-modal-composite-lbl {
+    font-size: 0.7rem; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .5px; margin-top: 4px;
+}
+.lb-modal-formula {
+    font-size: 0.72rem; color: #64748b; margin-top: 8px;
+    background: #eef2ff; display: inline-block; padding: 4px 10px; border-radius: 20px;
+}
+
+.lb-modal-breakdown { padding: 18px 22px; border-bottom: 1px solid #f0f3f8; }
+.lb-modal-section-title {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: #94a3b8; margin-bottom: 14px;
+}
+
+.lb-calc-block { margin-bottom: 16px; }
+.lb-calc-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.lb-calc-icon {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+}
+.lb-calc-label { font-size: 0.83rem; font-weight: 700; color: #1a2744; flex: 1; }
+.lb-calc-weight { font-size: 0.72rem; font-weight: 400; color: #94a3b8; }
+.lb-calc-contrib {
+    font-size: 0.9rem; font-weight: 800; color: #1a2744;
+    background: #f0f4ff; padding: 2px 10px; border-radius: 20px;
+    white-space: nowrap;
+}
+
+.lb-calc-steps { margin-bottom: 8px; }
+.lb-calc-step {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 5px 10px; background: #fafbfc; border-radius: 6px; margin-bottom: 3px;
+    font-size: 0.78rem;
+}
+.lb-calc-step-label { color: #64748b; flex: 1; padding-right: 10px; }
+.lb-calc-step-value { color: #374151; white-space: nowrap; }
+.lb-calc-result     { color: #1a2744 !important; font-size: 0.83rem; }
+.lb-calc-dim        { color: #94a3b8; font-size: 0.72rem; }
+
+.lb-calc-bar-wrap { height: 6px; background: #f0f3f8; border-radius: 4px; overflow: hidden; }
+.lb-calc-bar { height: 100%; border-radius: 4px; width: 0; transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+.lb-calc-sum {
+    background: #f8faff; border: 1px solid #e0e7ff; border-radius: 10px;
+    padding: 12px 16px; margin-top: 4px;
+}
+.lb-sum-row { display: flex; align-items: center; justify-content: space-between; }
+.lb-sum-eq  { font-size: 0.9rem; color: #64748b; }
+.lb-sum-op  { color: #94a3b8; margin: 0 4px; }
+.lb-sum-total {
+    font-size: 1.5rem; font-weight: 900; color: #1a2744;
+    background: linear-gradient(135deg, #1a2744, #3b5bdb);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.lb-modal-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+}
+.lb-modal-stat {
+    text-align: center; padding: 16px 8px; border-right: 1px solid #f0f3f8;
+}
+.lb-modal-stat:last-child { border-right: none; }
+.lb-modal-stat-num { font-size: 1.3rem; font-weight: 800; color: #1a2744; }
+.lb-modal-stat-lbl {
+    font-size: 0.62rem; font-weight: 600; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .4px; margin-top: 2px;
+}
+</style>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.taskrate-fill').forEach(function(el) {
+    el.style.width = (el.dataset.rate || 0) + '%';
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

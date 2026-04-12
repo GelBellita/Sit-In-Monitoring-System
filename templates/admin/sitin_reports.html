@@ -1,0 +1,157 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Reports — CCS Admin{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/sitin_reports.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reports-page">
+    <div class="report-table-card">
+
+        <!-- ── Toolbar ─────────────────────────────────────────── -->
+        <div class="report-toolbar">
+
+            <!-- Row 1: controls -->
+            <div class="toolbar-row-1">
+                <!-- Left: date + search + reset -->
+                <div class="toolbar-left">
+                    <div class="tb-field">
+                        <label><i class="fa-solid fa-calendar-day"></i> Date</label>
+                        <input type="date" id="datePicker">
+                    </div>
+                    <div class="tb-field tb-field-search">
+                        <label><i class="fa-solid fa-magnifying-glass"></i> Filter</label>
+                        <input type="text" id="filterInput" placeholder="Name, ID, purpose, lab…">
+                    </div>
+                    <button class="tb-btn tb-reset" id="btnReset">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Right: record count -->
+                <div class="toolbar-right">
+                    <div class="record-pill">
+                        <span class="rp-label">Records</span>
+                        <span class="rp-val" id="chipShowing">{{ records|length }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: export strip -->
+            <div class="toolbar-row-2">
+                <span class="export-label">
+                    <i class="fa-solid fa-download"></i> Download as:
+                </span>
+                <button class="exp-btn exp-csv" id="btnCSV">
+                    <i class="fa-solid fa-file-csv"></i> CSV
+                </button>
+                <button class="exp-btn exp-excel" id="btnExcel">
+                    <i class="fa-solid fa-file-excel"></i> Excel
+                </button>
+                <button class="exp-btn exp-pdf" id="btnPDF">
+                    <i class="fa-solid fa-file-pdf"></i> PDF
+                </button>
+                <button class="exp-btn exp-print" id="btnPrint">
+                    <i class="fa-solid fa-print"></i> Print
+                </button>
+            </div>
+
+        </div>
+
+        <!-- ── Table ───────────────────────────────────────────── -->
+        <div class="report-table-wrap">
+            {% if records %}
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID No.</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Year</th>
+                        <th>Purpose</th>
+                        <th>Lab</th>
+                        <th>PC</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody">
+                    {% for r in records %}
+                    <tr class="report-row"
+                        data-id="{{ r['studentId'] }}"
+                        data-name="{{ r['lastName'] }} {{ r['firstName'] }}"
+                        data-course="{{ r['course'] or '' }}"
+                        data-purpose="{{ r['purpose'] or '' }}"
+                        data-lab="{{ r['labRoom'] or '' }}"
+                        data-date="{{ r['timeIn'][:10] if r['timeIn'] else '' }}">
+                        <td class="row-num">{{ loop.index }}</td>
+                        <td><span class="id-val">{{ r['studentId'] }}</span></td>
+                        <td class="name-cell">{{ r['lastName'] }}, {{ r['firstName'] }}</td>
+                        <td><span class="course-tag">{{ r['course'] or '—' }}</span></td>
+                        <td class="year-cell">
+                            {% if r['yearLevel'] %}
+                                {% set yr = r['yearLevel']|string %}
+                                {% if yr in ['1','2','3','4'] %}Year {{ yr }}
+                                {% elif yr.startswith('1') %}Year 1
+                                {% elif yr.startswith('2') %}Year 2
+                                {% elif yr.startswith('3') %}Year 3
+                                {% elif yr.startswith('4') %}Year 4
+                                {% else %}{{ yr }}{% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td><span class="purpose-tag">{{ r['purpose'] or '—' }}</span></td>
+                        <td><span class="lab-tag">Lab {{ r['labRoom'] }}</span></td>
+                        <td>
+                            {% if r['pcNumber'] %}
+                                <span style="display:inline-flex;align-items:center;gap:3px;
+                                    background:#eff6ff;border:1.5px solid #93c5fd;color:#1e40af;
+                                    font-size:0.73rem;font-weight:700;padding:2px 8px;
+                                    border-radius:20px;white-space:nowrap;">
+                                    <i class="fa-solid fa-desktop" style="font-size:0.62rem;"></i>
+                                    PC {{ r['pcNumber'] }}
+                                </span>
+                            {% else %}
+                                <span style="color:#94a3b8;font-size:0.8rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="time-cell">
+                            {% if r['timeIn'] %}{{ r['timeIn'][11:16] }}{% else %}—{% endif %}
+                        </td>
+                        <td class="time-cell">
+                            {% if r['timeOut'] %}{{ r['timeOut'][11:16] }}{% else %}—{% endif %}
+                        </td>
+                        <td class="date-cell">
+                            {% if r['timeIn'] %}{{ r['timeIn'][:10] }}{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-report">
+                <i class="fa-regular fa-folder-open"></i>
+                <p>No records found</p>
+                <small>Sit-in sessions will appear here once students start using the labs.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ── Footer ──────────────────────────────────────────── -->
+        <div class="report-footer">
+            <span id="footerInfo">Showing all {{ records|length }} record{% if records|length != 1 %}s{% endif %}</span>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="{{ url_for('static', filename='js/sitin_reports.js') }}"></script>
+{% endblock %}

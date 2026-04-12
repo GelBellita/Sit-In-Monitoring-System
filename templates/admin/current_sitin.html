@@ -1,0 +1,341 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Current Sit-In — CCS Admin{% endblock %}
+
+{% block extra_styles %}
+<style>
+.logout-modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 400;
+    align-items: center; justify-content: center;
+}
+.logout-modal-backdrop.open { display: flex; }
+.logout-modal {
+    background: #fff; border-radius: 16px;
+    width: 100%; max-width: 480px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.25);
+    overflow: hidden;
+    animation: modalIn .22s ease;
+}
+@keyframes modalIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.logout-modal-header {
+    background: #1a2744; padding: 18px 22px;
+    display: flex; align-items: center; gap: 12px;
+}
+.logout-modal-header i { font-size: 1.3rem; color: #F5A623; }
+.logout-modal-title { font-size: 1rem; font-weight: 700; color: #fff; }
+.logout-modal-sub   { font-size: 0.75rem; color: rgba(255,255,255,.5); margin-top: 2px; }
+.logout-modal-body  { padding: 22px 24px; }
+.logout-student-info {
+    display: flex; align-items: center; gap: 12px;
+    background: #f0f4f8; border-radius: 9px; padding: 12px 14px;
+    margin-bottom: 20px;
+}
+.logout-avatar {
+    width: 42px; height: 42px; background: #1a2744; color: #F5A623;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 800; flex-shrink: 0;
+}
+.logout-student-name { font-weight: 700; font-size: 0.9rem; color: #1a2744; }
+.logout-student-meta { font-size: 0.73rem; color: #94a3b8; margin-top: 2px; }
+.rating-section { margin-bottom: 18px; }
+.rating-section-label {
+    font-size: 0.78rem; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .4px;
+    display: block; margin-bottom: 10px;
+}
+.admin-checklist { display: flex; flex-direction: column; gap: 8px; }
+.check-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid #e2e8f0;
+    border-radius: 8px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+    user-select: none;
+}
+.check-item:hover { border-color: #1a2744; background: #f8fafc; }
+.check-item.checked { border-color: #10b981; background: #f0fdf4; }
+.check-item input[type=checkbox] { display: none; }
+.check-icon {
+    width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; color: transparent; flex-shrink: 0;
+    transition: all .15s; background: #fff;
+}
+.check-item.checked .check-icon { background: #10b981; border-color: #10b981; color: #fff; }
+.check-text { font-size: 0.84rem; color: #374151; }
+.check-pts  { margin-left: auto; font-size: 0.7rem; font-weight: 700; color: #10b981; }
+.rating-score-display {
+    text-align: center; margin-top: 10px;
+    font-size: 0.82rem; color: #64748b;
+}
+.rating-score-display strong { color: #1a2744; font-size: 1rem; }
+.task-section { border-top: 1px solid #f0f3f8; padding-top: 16px; margin-bottom: 16px; }
+.task-section-label {
+    font-size: 0.78rem; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .4px;
+    display: block; margin-bottom: 10px;
+}
+.task-toggle { display: flex; gap: 8px; }
+.task-btn {
+    flex: 1; padding: 10px; border: 2px solid #e2e8f0;
+    border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+    cursor: pointer; transition: all .15s; background: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.task-btn.yes.active { border-color: #10b981; background: #f0fdf4; color: #065f46; }
+.task-btn.no.active  { border-color: #ef4444; background: #fff5f5; color: #991b1b; }
+.task-btn:not(.active):hover { border-color: #cbd5e1; background: #f8fafc; }
+.logout-modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    padding: 0 24px 20px;
+}
+.btn-cancel-logout {
+    padding: 9px 20px; border: 1.5px solid #cbd5e1; border-radius: 8px;
+    background: transparent; color: #64748b; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+}
+.btn-cancel-logout:hover { background: #f1f5f9; }
+.btn-confirm-logout {
+    padding: 9px 22px; border: none; border-radius: 8px;
+    background: #1a2744; color: #fff; font-size: 0.85rem; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+    transition: background .15s;
+}
+.btn-confirm-logout:hover { background: #243460; }
+/* PC number badge */
+.pc-num-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #eff6ff; border: 1.5px solid #93c5fd;
+    color: #1e40af; font-size: 0.74rem; font-weight: 700;
+    padding: 2px 9px; border-radius: 20px; white-space: nowrap;
+}
+.pc-num-pill i { font-size: 0.65rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content-inner" style="padding:24px 32px">
+
+    <div class="card">
+        <div class="card-header">
+            <span class="live-dot"></span>
+            Currently Active Sit-In Sessions
+            <span style="margin-left:auto;background:rgba(255,255,255,.15);padding:3px 12px;border-radius:20px;font-size:0.78rem;">
+                {{ records|length }} active
+            </span>
+        </div>
+        <div class="card-body" style="padding:0">
+
+            {% if records %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>ID Number</th>
+                            <th>Lab Room</th>
+                            <th>PC</th>
+                            <th>Purpose</th>
+                            <th>Time In</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records %}
+                        <tr>
+                            <td style="color:#a0aec0;font-weight:700;text-align:center">{{ loop.index }}</td>
+                            <td><strong>{{ r['lastName'] }}, {{ r['firstName'] }}</strong></td>
+                            <td><span class="student-id">{{ r['studentId'] }}</span></td>
+                            <td><span class="purpose-pill">Lab {{ r['labRoom'] }}</span></td>
+                            <td>
+                                {% if r['pcNumber'] %}
+                                    <span class="pc-num-pill">
+                                        <i class="fa-solid fa-desktop"></i> PC {{ r['pcNumber'] }}
+                                    </span>
+                                {% else %}
+                                    <span style="color:#94a3b8;font-size:0.8rem;">—</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="purpose-pill">{{ r['purpose'] or '—' }}</span></td>
+                            <td class="timein-cell">
+                                <span class="live-dot-sm"></span>
+                                {{ r['timeIn'] }}
+                            </td>
+                            <td>
+                                <button class="btn btn-danger btn-sm logout-btn"
+                                    data-sit-id="{{ r['id'] }}"
+                                    data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
+                                    data-student-id="{{ r['studentId'] }}"
+                                    data-lab="Lab {{ r['labRoom'] }}">
+                                    <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:48px">
+                <i class="fa-regular fa-desktop"></i>
+                <p>No active sit-in sessions</p>
+                <small>Students currently using the lab will appear here.</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ── Logout + Rate Modal ── -->
+<div class="logout-modal-backdrop" id="logoutModalBackdrop">
+    <div class="logout-modal">
+        <div class="logout-modal-header">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <div>
+                <div class="logout-modal-title">Log Out Student</div>
+                <div class="logout-modal-sub" id="logoutModalSub">Rate before ending session</div>
+            </div>
+        </div>
+
+        <form method="POST" id="logoutForm" action="">
+            <input type="hidden" name="adminRating"   id="logoutAdminRating"   value="0">
+            <input type="hidden" name="taskCompleted" id="logoutTaskCompleted" value="0">
+
+            <div class="logout-modal-body">
+                <div class="logout-student-info">
+                    <div class="logout-avatar" id="logoutAvatarInitials">?</div>
+                    <div>
+                        <div class="logout-student-name" id="logoutStudentName">—</div>
+                        <div class="logout-student-meta" id="logoutStudentMeta">—</div>
+                    </div>
+                </div>
+
+                <div class="rating-section">
+                    <span class="rating-section-label">
+                        <i class="fa-solid fa-star" style="color:#f59e0b"></i>
+                        Rate Student Behavior (1 point each, max 3)
+                    </span>
+                    <div class="admin-checklist">
+                        <label class="check-item" id="check1">
+                            <input type="checkbox" class="admin-check" value="1">
+                            <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                            <span class="check-text">🖥️ Arranged &amp; cleaned PC before leaving</span>
+                            <span class="check-pts">+1 pt</span>
+                        </label>
+                        <label class="check-item" id="check2">
+                            <input type="checkbox" class="admin-check" value="1">
+                            <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                            <span class="check-text">🪑 Chair properly arranged</span>
+                            <span class="check-pts">+1 pt</span>
+                        </label>
+                        <label class="check-item" id="check3">
+                            <input type="checkbox" class="admin-check" value="1">
+                            <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                            <span class="check-text">✅ General good conduct &amp; lab etiquette</span>
+                            <span class="check-pts">+1 pt</span>
+                        </label>
+                    </div>
+                    <div class="rating-score-display">
+                        Admin rating: <strong id="ratingScoreText">0</strong> / 3 pts
+                        <span style="color:#94a3b8;font-size:0.72rem;margin-left:6px;">(every 3 pts = 1 leaderboard point)</span>
+                    </div>
+                </div>
+
+                <div class="task-section">
+                    <span class="task-section-label">
+                        <i class="fa-solid fa-clipboard-check" style="color:#3b5bdb"></i>
+                        Did the student complete their task?
+                    </span>
+                    <div class="task-toggle">
+                        <button type="button" class="task-btn yes" id="taskYesBtn">
+                            <i class="fa-solid fa-circle-check"></i> Yes, completed
+                        </button>
+                        <button type="button" class="task-btn no active" id="taskNoBtn">
+                            <i class="fa-solid fa-circle-xmark"></i> Not confirmed
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logout-modal-footer">
+                <button type="button" class="btn-cancel-logout" onclick="closeLogoutModal()">Cancel</button>
+                <button type="submit" class="btn-confirm-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Confirm Log Out
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.logout-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        openLogoutModal(
+            this.dataset.sitId,
+            this.dataset.name,
+            this.dataset.studentId,
+            this.dataset.lab
+        );
+    });
+});
+
+function openLogoutModal(sitId, name, studentId, lab) {
+    document.getElementById('logoutForm').action = '/admin/logout-sitin/' + sitId;
+    document.getElementById('logoutModalSub').textContent = lab + ' — ' + name;
+    document.getElementById('logoutStudentName').textContent = name;
+    document.getElementById('logoutStudentMeta').textContent = studentId;
+
+    var parts    = name.trim().split(' ');
+    var initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '');
+    document.getElementById('logoutAvatarInitials').textContent = initials.toUpperCase();
+
+    document.querySelectorAll('.admin-check').forEach(function(cb) {
+        cb.checked = false;
+        cb.closest('.check-item')?.classList.remove('checked');
+    });
+    updateRatingScore();
+    setTask(0);
+
+    document.getElementById('logoutModalBackdrop').classList.add('open');
+}
+
+function closeLogoutModal() {
+    document.getElementById('logoutModalBackdrop').classList.remove('open');
+}
+
+document.querySelectorAll('.admin-check').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        this.closest('.check-item')?.classList.toggle('checked', this.checked);
+        updateRatingScore();
+    });
+});
+
+function updateRatingScore() {
+    var score = 0;
+    document.querySelectorAll('.admin-check').forEach(function(cb) {
+        if (cb.checked) score += parseInt(cb.value || 1);
+    });
+    document.getElementById('logoutAdminRating').value = score;
+    document.getElementById('ratingScoreText').textContent = score;
+}
+
+function setTask(val) {
+    document.getElementById('logoutTaskCompleted').value = val;
+    document.getElementById('taskYesBtn').classList.toggle('active', val === 1);
+    document.getElementById('taskNoBtn').classList.toggle('active', val === 0);
+}
+
+document.getElementById('taskYesBtn').addEventListener('click', function() { setTask(1); });
+document.getElementById('taskNoBtn').addEventListener('click',  function() { setTask(0); });
+
+document.getElementById('logoutModalBackdrop').addEventListener('click', function(e) {
+    if (e.target === this) closeLogoutModal();
+});
+</script>
+{% endblock %}

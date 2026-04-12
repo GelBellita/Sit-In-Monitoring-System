@@ -1,0 +1,234 @@
+{% extends 'student/studentLayout.html' %}
+
+{% block title %}Edit Profile — CCS SitIn{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/editProfile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="edit-profile-layout">
+
+    <!-- LEFT: FORM -->
+    <section class="profile-form-section card">
+        <div class="card-header ch-navy">
+            <div class="card-header-icon">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <span class="card-title">Edit Your Information</span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data" id="editForm">
+
+                <div class="form-grid">
+
+                    <div class="field-group full-width">
+                        <label for="idNumber">ID Number</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-id-card input-icon"></i>
+                            <input type="text" id="idNumber" value="{{ user['idNumber'] }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="lastName">Last Name</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" id="lastName" name="lastName" value="{{ user['lastName'] }}" required placeholder="Last Name">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="firstName">First Name</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" id="firstName" name="firstName" value="{{ user['firstName'] }}" required placeholder="First Name">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="middleName">Middle Name</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" id="middleName" name="middleName" value="{{ user['middleName'] or '' }}" placeholder="Middle Name (optional)">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="email">Email Address</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" id="email" name="email" value="{{ user['email'] }}" required placeholder="email@example.com">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="course">Course</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-graduation-cap input-icon"></i>
+                            <select id="course" name="course" required>
+                                <option value="" disabled {% if not user['course'] %}selected{% endif %}>Select your course</option>
+                                <optgroup label="🖥️ College of Computer Studies">
+                                    <option value="BSIT" {% if user['course'] == 'BSIT' %}selected{% endif %}>BS Information Technology</option>
+                                    <option value="BSCS" {% if user['course'] == 'BSCS' %}selected{% endif %}>BS Computer Science</option>
+                                </optgroup>
+
+                                <optgroup label="💼 College of Business and Accountancy">
+                                    <option value="BSA" {% if user['course'] == 'BSA' %}selected{% endif %}>BS Accountancy</option>
+                                    <option value="BSBA-FM" {% if user['course'] == 'BSBA-FM' %}selected{% endif %}>BSBA - Financial Management</option>
+                                    <option value="BSBA-MM" {% if user['course'] == 'BSBA-MM' %}selected{% endif %}>BSBA - Marketing Management</option>
+                                    <option value="BSBA-HRM" {% if user['course'] == 'BSBA-HRM' %}selected{% endif %}>BSBA - Human Resource Management</option>
+                                    <option value="BSBA-OM" {% if user['course'] == 'BSBA-OM' %}selected{% endif %}>BSBA - Operations Management</option>
+                                    <option value="BSMA" {% if user['course'] == 'BSMA' %}selected{% endif %}>BS Management Accounting</option>
+                                    <option value="BSEntrep" {% if user['course'] == 'BSEntrep' %}selected{% endif %}>BS Entrepreneurship</option>
+                                </optgroup>
+
+                                <optgroup label="⚙️ College of Engineering">
+                                    <option value="BSCE" {% if user['course'] == 'BSCE' %}selected{% endif %}>BS Civil Engineering</option>
+                                    <option value="BSEE" {% if user['course'] == 'BSEE' %}selected{% endif %}>BS Electrical Engineering</option>
+                                    <option value="BSME" {% if user['course'] == 'BSME' %}selected{% endif %}>BS Mechanical Engineering</option>
+                                    <option value="BSIE" {% if user['course'] == 'BSIE' %}selected{% endif %}>BS Industrial Engineering</option>
+                                    <option value="BSECE" {% if user['course'] == 'BSECE' %}selected{% endif %}>BS Electronics Engineering</option>
+                                </optgroup>
+
+                                <optgroup label="📚 College of Education">
+                                    <option value="BEED" {% if user['course'] == 'BEED' %}selected{% endif %}>Bachelor of Elementary Education</option>
+                                    <option value="BSED-ENG" {% if user['course'] == 'BSED-ENG' %}selected{% endif %}>BSED - English</option>
+                                    <option value="BSED-MATH" {% if user['course'] == 'BSED-MATH' %}selected{% endif %}>BSED - Mathematics</option>
+                                    <option value="BSED-SCI" {% if user['course'] == 'BSED-SCI' %}selected{% endif %}>BSED - Science</option>
+                                    <option value="BSED-FIL" {% if user['course'] == 'BSED-FIL' %}selected{% endif %}>BSED - Filipino</option>
+                                    <option value="BSED-SOSHIL" {% if user['course'] == 'BSED-SOSHIL' %}selected{% endif %}>BSED - Social Studies</option>
+                                    <option value="BPED" {% if user['course'] == 'BPED' %}selected{% endif %}>BSPED- Physical Education</option>
+                                </optgroup>
+
+                                <optgroup label="🏥 College of Nursing">
+                                    <option value="BSN" {% if user['course'] == 'BSN' %}selected{% endif %}>BS Nursing</option>
+                                </optgroup>
+
+                                <optgroup label="🎨 College of Arts and Sciences">
+                                    <option value="ABCOM" {% if user['course'] == 'ABCOM' %}selected{% endif %}>AB Communication</option>
+                                    <option value="ABPOLSCI" {% if user['course'] == 'ABPOLSCI' %}selected{% endif %}>AB Political Science</option>
+                                    <option value="BSPSY" {% if user['course'] == 'BSPSY' %}selected{% endif %}>BS Psychology</option>
+                                    <option value="BSBIO" {% if user['course'] == 'BSBIO' %}selected{% endif %}>BS Biology</option>
+                                    <option value="BSMATH" {% if user['course'] == 'BSMATH' %}selected{% endif %}>BS Mathematics</option>
+                                </optgroup>
+
+                                <optgroup label="🏛️ College of Architecture and Fine Arts">
+                                    <option value="BSARCH" {% if user['course'] == 'BSARCH' %}selected{% endif %}>BS Architecture</option>
+                                    <option value="BSID" {% if user['course'] == 'BSID' %}selected{% endif %}>BS Interior Design</option>
+                                    <option value="BSFA" {% if user['course'] == 'BSFA' %}selected{% endif %}>BS Fine Arts</option>
+                                </optgroup>
+
+                                <optgroup label="🏨 College of Tourism and Hospitality Management">
+                                    <option value="BSTM" {% if user['course'] == 'BSTM' %}selected{% endif %}>BS Tourism Management</option>
+                                    <option value="BSHM" {% if user['course'] == 'BSHM' %}selected{% endif %}>BS Hospitality Management</option>
+                                </optgroup>
+
+                                <optgroup label="⚖️ College of Criminal Justice Education">
+                                    <option value="BSCRIM" {% if user['course'] == 'BSCRIM' %}selected{% endif %}>BS Criminology</option>
+                                </optgroup>
+
+                                <optgroup label="💊 College of Pharmacy">
+                                    <option value="BSPHAR" {% if user['course'] == 'BSPHAR' %}selected{% endif %}>BS Pharmacy</option>
+                                </optgroup>
+
+                                <optgroup label="⚓ College of Maritime Education">
+                                    <option value="BSMARE" {% if user['course'] == 'BSMARE' %}selected{% endif %}>BS Marine Engineering</option>
+                                    <option value="BSMT" {% if user['course'] == 'BSMT' %}selected{% endif %}>BS Marine Transportation</option>
+                                </optgroup>
+
+                                <optgroup label="⚕️ College of Allied Medical Sciences">
+                                    <option value="BSMT-MED" {% if user['course'] == 'BSMT-MED' %}selected{% endif %}>BS Medical Technology</option>
+                                    <option value="BSRT" {% if user['course'] == 'BSRT' %}selected{% endif %}>BS Radiologic Technology</option>
+                                    <option value="BSOT" {% if user['course'] == 'BSOT' %}selected{% endif %}>BS Occupational Therapy</option>
+                                    <option value="BSPT" {% if user['course'] == 'BSPT' %}selected{% endif %}>BS Physical Therapy</option>
+                                </optgroup>
+
+                                <optgroup label="📜 College of Law">
+                                    <option value="JD" {% if user['course'] == 'JD' %}selected{% endif %}>Juris Doctor</option>
+                                </optgroup>
+
+                                <optgroup label="🎓 Senior High School">
+                                    <option value="SHS-STEM" {% if user['course'] == 'SHS-STEM' %}selected{% endif %}>SHS - STEM</option>
+                                    <option value="SHS-ABM" {% if user['course'] == 'SHS-ABM' %}selected{% endif %}>SHS - ABM</option>
+                                    <option value="SHS-HUMSS" {% if user['course'] == 'SHS-HUMSS' %}selected{% endif %}>SHS - HUMSS</option>
+                                    <option value="SHS-TVL" {% if user['course'] == 'SHS-TVL' %}selected{% endif %}>SHS - TVL</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="yearLevel">Year Level</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-calendar input-icon"></i>
+                            <select id="yearLevel" name="yearLevel">
+                                {% for y in ['1', '2', '3', '4'] %}
+                                <option value="{{ y }}" {% if user['yearLevel'] == y %}selected{% endif %}>Year {{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-group full-width">
+                        <label for="address">Address</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-location-dot input-icon"></i>
+                            <input type="text" id="address" name="address" value="{{ user['address'] or '' }}" placeholder="City, Province">
+                        </div>
+                    </div>
+
+                </div>
+
+                <input type="file" id="profileImageInput" name="profileImage" accept="image/*" style="display:none">
+
+                <div class="form-actions">
+                    <a href="{{ url_for('dashboard') }}" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-save">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </section>
+
+    <!-- RIGHT: PROFILE PICTURE -->
+    <aside class="profile-picture-section card">
+        <div class="card-header ch-gold">
+            <div class="card-header-icon">
+                <i class="fa-solid fa-image"></i>
+            </div>
+            <span class="card-title">Profile Photo</span>
+        </div>
+        <div class="card-body">
+            <div class="avatar-edit-area">
+                <div class="avatar-preview" id="avatarPreview">
+                    {% if user['profileImage'] %}
+                    <img src="{{ url_for('static', filename='images/uploads/' + user['profileImage']) }}" alt="Profile" id="previewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    {% else %}
+                    <div class="avatar-initials" id="avatarInitials">{{ user['firstName'][0] | upper }}{{ user['lastName'][0] | upper }}</div>
+                    <img id="previewImg" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                    {% endif %}
+                </div>
+
+                <p class="avatar-hint">Upload Photo to let people know you</p>
+
+                <button type="button" class="btn-upload" onclick="document.getElementById('profileImageInput').click()">
+                    <i class="fa-solid fa-upload"></i> Upload Photo
+                </button>
+            </div>
+
+            <div class="profile-summary">
+                <div class="summary-name"><i class="fa-solid fa-user"></i> {{ user['firstName'] }} {{ user['lastName'] }} {{ user['middleName'] }}</div>
+                <div class="summary-id"><i class="fa-solid fa-id-card"></i> ID: {{ user['idNumber'] }}</div>
+                <div class="summary-meta"><i class="fa-solid fa-graduation-cap"></i> {{ user['course'] }} &middot; Year {{ user['yearLevel'] }}</div>
+                <div class="summary-meta"><i class="fa-solid fa-location-dot"></i> {{ user['address'] }}</div>
+                <div class="summary-meta"><i class="fa-solid fa-envelope"></i> {{ user['email'] }}</div>
+                
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}

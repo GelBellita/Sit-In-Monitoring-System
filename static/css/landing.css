@@ -1,0 +1,339 @@
+/* LANDING */
+.page-banner {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 100px 80px 60px;
+    overflow: hidden;
+}
+
+.banner-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('../images/ucpic2.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+}
+
+.banner-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        rgba(0, 24, 72, 0.80) 0%,
+        rgba(0, 24, 72, 0.65) 50%,
+        rgba(0, 24, 72, 0.30) 100%
+    );
+}
+
+.banner-text {
+    position: relative;
+    z-index: 1;
+    max-width: 660px;
+    animation: fadeUp 0.9s ease both;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.banner-label {
+    display: inline-block;
+    background: #F5A623;
+    color: #001d57;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 50px;
+    margin-bottom: 22px;
+}
+
+.banner-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(34px, 4.5vw, 58px);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.18;
+    margin-bottom: 22px;
+    letter-spacing: -0.01em;
+}
+
+.banner-text h1 span {
+    color: #F5A623;
+}
+
+.banner-text .banner-desc {
+    font-size: 16.5px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.88);
+    max-width: 520px;
+    margin-bottom: 36px;
+    line-height: 1.75;
+}
+
+.banner-buttons {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.btn-get-started {
+    padding: 14px 34px;
+    background: #F5A623;
+    color: #001d57;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14.5px;
+    letter-spacing: 0.03em;
+    transition: all 0.25s;
+}
+
+.btn-get-started:hover {
+    background: #e09410;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(245, 166, 35, 0.4);
+}
+
+.btn-sign-in {
+    padding: 14px 34px;
+    background: transparent;
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14.5px;
+    transition: all 0.25s;
+}
+
+.btn-sign-in:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: white;
+}
+
+/* ── Stats Row ── */
+.banner-stats {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 48px;
+    margin-top: 60px;
+    animation: fadeUp 0.9s 0.2s ease both;
+}
+
+.stat-item {
+    text-align: left;
+}
+
+.stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #F5A623;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* ABOUT SECTION CARD*/
+.features-section {
+    padding: 90px 80px;
+    background: #ffffff;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-title h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 3vw, 38px);
+    color: #003087;
+    margin-bottom: 12px;
+}
+
+.section-title p {
+    font-size: 16px;
+    color: #555;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    background: #f8faff;
+    border: 1px solid #e3eaf8;
+    border-radius: 14px;
+    padding: 34px 28px;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 48, 135, 0.10);
+}
+
+.feature-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+}
+
+.feature-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: #003087;
+    margin-bottom: 10px;
+}
+
+.feature-card p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.7;
+}
+
+/* BOTTOM SIGNUP*/
+.signup-strip {
+    background: linear-gradient(120deg, #001d57 0%, #1a4db5 100%);
+    padding: 70px 80px;
+    text-align: center;
+    color: white;
+}
+
+.signup-strip h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 2.8vw, 36px);
+    margin-bottom: 14px;
+}
+
+.signup-strip p {
+    font-size: 16px;
+    opacity: 0.82;
+    max-width: 500px;
+    margin: 0 auto 32px;
+}
+
+.btn-signup-strip {
+    padding: 14px 34px;
+    background: #F5A623;
+    color: #001d57;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14.5px;
+    letter-spacing: 0.03em;
+    transition: all 0.25s;
+}
+
+.btn-signup-strip:hover {
+    background: #e09410;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(245, 166, 35, 0.4);
+}
+
+.about-section {
+    padding: 90px 80px;
+    background: #ffffff;
+}
+
+.features-section {
+    padding: 90px 80px;
+    background: #ffffff;
+}
+
+/* COMMUNITY SECT*/
+.community-section {
+    padding: 90px 80px;
+    background: #f0f4fb;
+}
+
+.community-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.community-inner h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 3vw, 38px);
+    color: #003087;
+    margin-bottom: 16px;
+}
+
+.community-lead {
+    font-size: 16px;
+    color: #444;
+    max-width: 700px;
+    line-height: 1.8;
+    margin-bottom: 52px;
+}
+
+.community-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 48px;
+}
+
+.community-block h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: #003087;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #F5A623;
+    display: inline-block;
+}
+
+.community-block p {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.8;
+    margin-top: 14px;
+}
+
+@media (max-width: 768px) {
+    .about-section,
+    .community-section {
+        padding: 60px 28px;
+    }
+
+    .community-columns {
+        gap: 32px;
+    }
+
+        .page-banner {
+        padding: 90px 28px 50px;
+    }
+
+    .banner-stats {
+        gap: 28px;
+        flex-wrap: wrap;
+    }
+
+    .features-section,
+    .signup-strip {
+        padding: 60px 28px;
+    }
+}

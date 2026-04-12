@@ -1,0 +1,198 @@
+/* ── feedback_reports.css ────────────────────────────────────────────────────
+   Place in: static/css/adminCss/feedback_reports.css
+─────────────────────────────────────────────────────────────────────────── */
+
+.feedback-page {
+    padding: 28px 32px;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.feedback-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    overflow: hidden;
+}
+
+/* ── Card Header ──────────────────────────────────────── */
+.feedback-card-header {
+    background: #1a2744;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.feedback-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.feedback-header-icon {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,.12);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; flex-shrink: 0;
+}
+.feedback-title { font-size: 1rem; font-weight: 700; color: #fff; }
+.feedback-sub   { font-size: 0.74rem; color: rgba(255,255,255,.5); margin-top: 2px; }
+.feedback-count-pill {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    color: rgba(255,255,255,.8);
+    font-size: 0.78rem; font-weight: 600;
+    padding: 5px 14px; border-radius: 20px;
+}
+.feedback-count-pill span {
+    font-size: 1rem; font-weight: 800; color: #fff; margin-right: 3px;
+}
+
+/* ── Toolbar ──────────────────────────────────────────── */
+.feedback-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e8ecf2;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.toolbar-left  { display: flex; align-items: center; }
+.toolbar-right { display: flex; align-items: center; }
+
+.btn-print {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 18px; background: #1a2744; color: #fff;
+    border: none; border-radius: 7px;
+    font-size: 0.83rem; font-weight: 700;
+    cursor: pointer; transition: background .15s, transform .1s;
+}
+.btn-print:hover  { background: #243460; transform: translateY(-1px); }
+.btn-print:active { transform: translateY(0); }
+
+.filter-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1.5px solid #cbd5e1;
+    border-radius: 8px; padding: 0 12px; transition: border-color .15s;
+}
+.filter-wrap:focus-within { border-color: #1a2744; }
+.filter-icon { font-size: 0.78rem; color: #94a3b8; }
+.filter-wrap input {
+    border: none; outline: none; height: 34px;
+    font-size: 0.83rem; color: #1a2744;
+    background: transparent; width: 220px;
+}
+.filter-wrap input::placeholder { color: #94a3b8; }
+
+/* ── Table ────────────────────────────────────────────── */
+.feedback-table-wrap {
+    overflow-x: auto;
+    max-height: 580px;
+    overflow-y: auto;
+}
+.feedback-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+}
+.feedback-table thead th {
+    position: sticky; top: 0; z-index: 2;
+    padding: 11px 16px; text-align: left;
+    font-size: 0.73rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px;
+    color: #4a5568; background: #f0f3f8;
+    border-bottom: 2px solid #dce3ed; white-space: nowrap;
+}
+.feedback-table tbody tr {
+    border-bottom: 1px solid #f0f3f8;
+    transition: background .12s;
+}
+.feedback-table tbody tr:nth-child(even) { background: #fafbfc; }
+.feedback-table tbody tr:hover           { background: #f0f5ff; }
+.feedback-table td {
+    padding: 11px 16px; color: #2d3748; vertical-align: top;
+}
+
+.row-num {
+    font-weight: 700; color: #a0aec0;
+    font-size: 0.78rem; width: 36px; text-align: center;
+}
+.id-cell   { font-weight: 700; color: #2b6cb0; font-size: 0.83rem; white-space: nowrap; }
+.name-cell { font-weight: 600; color: #1a2744; white-space: nowrap; }
+.lab-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 700;
+    background: #e6f4ea; color: #276749; white-space: nowrap;
+}
+.date-cell { font-size: 0.8rem; color: #718096; white-space: nowrap; }
+.msg-cell  { color: #374151; font-size: 0.84rem; line-height: 1.5; max-width: 360px; }
+
+/* ── Star rating display ──────────────────────────────── */
+.star-display-admin        { color: #f59e0b; font-size: 0.88rem; letter-spacing: 1px; }
+.star-display-admin .empty { color: #d1d5db; }
+
+/* ── Hidden rows (live filter) ────────────────────────── */
+.fb-row.hidden { display: none; }
+
+/* ── Footer ───────────────────────────────────────────── */
+.feedback-footer {
+    padding: 11px 20px;
+    border-top: 1px solid #f0f3f8;
+    background: #fafbfc;
+    font-size: 0.8rem; color: #a0aec0;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+}
+
+/* ── Empty state ──────────────────────────────────────── */
+.empty-feedback { text-align: center; padding: 60px 20px; color: #a0aec0; }
+.empty-feedback i     { font-size: 2.6rem; margin-bottom: 14px; display: block; color: #cbd5e1; }
+.empty-feedback p     { font-size: 0.95rem; font-weight: 600; margin: 0 0 4px; color: #718096; }
+.empty-feedback small { font-size: 0.82rem; }
+
+/* ── Print ───────────────────────────────────────────────────────────────────
+   Hide all chrome, show only the feedback card, use landscape layout.
+─────────────────────────────────────────────────────────────────────────── */
+@media print {
+
+    @page { size: landscape; margin: 1cm; }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    .feedback-card,
+    .feedback-card * {
+        visibility: visible !important;
+    }
+
+    .feedback-card {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        z-index: 9999 !important;
+    }
+
+    .feedback-table-wrap {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .feedback-toolbar {
+        display: none !important;
+    }
+
+    .feedback-card-header {
+        background: #1a2744 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .fb-row { page-break-inside: avoid; }
+}

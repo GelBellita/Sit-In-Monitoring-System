@@ -1,0 +1,139 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Edit Student — CCS Admin{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:580px; margin: 0 auto;">
+    <div class="card-header"><i class="fa-solid fa-id-card"></i> {{ student['idNumber'] }} — {{ student['firstName'] }} {{ student['lastName'] }}</div>
+    <div class="card-body">
+        <form method="POST">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="firstName" value="{{ student['firstName'] }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Middle Name</label>
+                    <input type="text" name="middleName" value="{{ student['middleName'] or '' }}">
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label>Last Name</label>
+                    <input type="text" name="lastName" value="{{ student['lastName'] }}" required>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ student['email'] }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Year Level</label>
+                    <select name="yearLevel">
+                        {% for yr in ['1','2','3','4'] %}
+                        <option value="{{ yr }}" {% if student['yearLevel'] == yr %}selected{% endif %}>{{ yr }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Course</label>
+                     <select id="course" name="course" required>
+                            <option value="" disabled {% if not student['course'] %}selected{% endif %}>Select course</option>
+                            <optgroup label="🖥️ College of Computer Studies">
+                                <option value="BSIT" {% if student['course'] == 'BSIT' %}selected{% endif %}>BS Information Technology</option>
+                                <option value="BSCS" {% if student['course'] == 'BSCS' %}selected{% endif %}>BS Computer Science</option>
+                            </optgroup>
+
+                            <optgroup label="💼 College of Business and Accountancy">
+                                <option value="BSA" {% if student['course'] == 'BSA' %}selected{% endif %}>BS Accountancy</option>
+                                <option value="BSBA-FM" {% if student['course'] == 'BSBA-FM' %}selected{% endif %}>BSBA - Financial Management</option>
+                                <option value="BSBA-MM" {% if student['course'] == 'BSBA-MM' %}selected{% endif %}>BSBA - Marketing Management</option>
+                                <option value="BSBA-HRM" {% if student['course'] == 'BSBA-HRM' %}selected{% endif %}>BSBA - Human Resource Management</option>
+                                <option value="BSBA-OM" {% if student['course'] == 'BSBA-OM' %}selected{% endif %}>BSBA - Operations Management</option>
+                                <option value="BSMA" {% if student['course'] == 'BSMA' %}selected{% endif %}>BS Management Accounting</option>
+                                <option value="BSEntrep" {% if student['course'] == 'BSEntrep' %}selected{% endif %}>BS Entrepreneurship</option>
+                            </optgroup>
+
+                            <optgroup label="⚙️ College of Engineering">
+                                <option value="BSCE" {% if student['course'] == 'BSCE' %}selected{% endif %}>BS Civil Engineering</option>
+                                <option value="BSEE" {% if student['course'] == 'BSEE' %}selected{% endif %}>BS Electrical Engineering</option>
+                                <option value="BSME" {% if student['course'] == 'BSME' %}selected{% endif %}>BS Mechanical Engineering</option>
+                                <option value="BSIE" {% if student['course'] == 'BSIE' %}selected{% endif %}>BS Industrial Engineering</option>
+                                <option value="BSECE" {% if student['course'] == 'BSECE' %}selected{% endif %}>BS Electronics Engineering</option>
+                            </optgroup>
+
+                            <optgroup label="📚 College of Education">
+                                <option value="BEED" {% if student['course'] == 'BEED' %}selected{% endif %}>Bachelor of Elementary Education</option>
+                                <option value="BSED-ENG" {% if student['course'] == 'BSED-ENG' %}selected{% endif %}>BSED - English</option>
+                                <option value="BSED-MATH" {% if student['course'] == 'BSED-MATH' %}selected{% endif %}>BSED - Mathematics</option>
+                                <option value="BSED-SCI" {% if student['course'] == 'BSED-SCI' %}selected{% endif %}>BSED - Science</option>
+                                <option value="BSED-FIL" {% if student['course'] == 'BSED-FIL' %}selected{% endif %}>BSED - Filipino</option>
+                                <option value="BSED-SOSHIL" {% if student['course'] == 'BSED-SOSHIL' %}selected{% endif %}>BSED - Social Studies</option>
+                                <option value="BPED" {% if student['course'] == 'BPED' %}selected{% endif %}>BSPED - Physical Education</option>
+                            </optgroup>
+
+                            <optgroup label="🏥 College of Nursing">
+                                <option value="BSN" {% if student['course'] == 'BSN' %}selected{% endif %}>BS Nursing</option>
+                            </optgroup>
+
+                            <optgroup label="🎨 College of Arts and Sciences">
+                                <option value="ABCOM" {% if student['course'] == 'ABCOM' %}selected{% endif %}>AB Communication</option>
+                                <option value="ABPOLSCI" {% if student['course'] == 'ABPOLSCI' %}selected{% endif %}>AB Political Science</option>
+                                <option value="BSPSY" {% if student['course'] == 'BSPSY' %}selected{% endif %}>BS Psychology</option>
+                                <option value="BSBIO" {% if student['course'] == 'BSBIO' %}selected{% endif %}>BS Biology</option>
+                                <option value="BSMATH" {% if student['course'] == 'BSMATH' %}selected{% endif %}>BS Mathematics</option>
+                            </optgroup>
+
+                            <optgroup label="🏛️ College of Architecture and Fine Arts">
+                                <option value="BSARCH" {% if student['course'] == 'BSARCH' %}selected{% endif %}>BS Architecture</option>
+                                <option value="BSID" {% if student['course'] == 'BSID' %}selected{% endif %}>BS Interior Design</option>
+                                <option value="BSFA" {% if student['course'] == 'BSFA' %}selected{% endif %}>BS Fine Arts</option>
+                            </optgroup>
+
+                            <optgroup label="🏨 College of Tourism and Hospitality Management">
+                                <option value="BSTM" {% if student['course'] == 'BSTM' %}selected{% endif %}>BS Tourism Management</option>
+                                <option value="BSHM" {% if student['course'] == 'BSHM' %}selected{% endif %}>BS Hospitality Management</option>
+                            </optgroup>
+
+                            <optgroup label="⚖️ College of Criminal Justice Education">
+                                <option value="BSCRIM" {% if student['course'] == 'BSCRIM' %}selected{% endif %}>BS Criminology</option>
+                            </optgroup>
+
+                            <optgroup label="💊 College of Pharmacy">
+                                <option value="BSPHAR" {% if student['course'] == 'BSPHAR' %}selected{% endif %}>BS Pharmacy</option>
+                            </optgroup>
+
+                            <optgroup label="⚓ College of Maritime Education">
+                                <option value="BSMARE" {% if student['course'] == 'BSMARE' %}selected{% endif %}>BS Marine Engineering</option>
+                                <option value="BSMT" {% if student['course'] == 'BSMT' %}selected{% endif %}>BS Marine Transportation</option>
+                            </optgroup>
+
+                            <optgroup label="⚕️ College of Allied Medical Sciences">
+                                <option value="BSMT-MED" {% if student['course'] == 'BSMT-MED' %}selected{% endif %}>BS Medical Technology</option>
+                                <option value="BSRT" {% if student['course'] == 'BSRT' %}selected{% endif %}>BS Radiologic Technology</option>
+                                <option value="BSOT" {% if student['course'] == 'BSOT' %}selected{% endif %}>BS Occupational Therapy</option>
+                                <option value="BSPT" {% if student['course'] == 'BSPT' %}selected{% endif %}>BS Physical Therapy</option>
+                            </optgroup>
+
+                            <optgroup label="📜 College of Law">
+                                <option value="JD" {% if student['course'] == 'JD' %}selected{% endif %}>Juris Doctor</option>
+                            </optgroup>
+
+                            <optgroup label="🎓 Senior High School">
+                                <option value="SHS-STEM" {% if student['course'] == 'SHS-STEM' %}selected{% endif %}>SHS - STEM</option>
+                                <option value="SHS-ABM" {% if student['course'] == 'SHS-ABM' %}selected{% endif %}>SHS - ABM</option>
+                                <option value="SHS-HUMSS" {% if student['course'] == 'SHS-HUMSS' %}selected{% endif %}>SHS - HUMSS</option>
+                                <option value="SHS-TVL" {% if student['course'] == 'SHS-TVL' %}selected{% endif %}>SHS - TVL</option>
+                            </optgroup>
+                        </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label>Remaining Sessions</label>
+                    <input type="number" name="sessions" value="{{ student['sessions'] if student['sessions'] is not none else 30 }}" readonly style="background:#f0f4f8;cursor:not-allowed;color:var(--muted);">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:6px;">
+                <a href="{{ url_for('admin_students') }}" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

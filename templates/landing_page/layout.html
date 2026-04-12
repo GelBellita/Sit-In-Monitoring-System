@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}UC CCS Monitoring System{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    {% block page_styles %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+    <nav class="navbar">
+        <a href="{{ url_for('landing') }}" class="navbar-logo-link">
+            <img src="{{ url_for('static', filename='images/uclogo.png') }}" alt="UC Logo">
+            <div>
+                <span class="navbar-school-name">University of Cebu</span>
+                <span class="navbar-system-name">CCS Sit-in Monitoring</span>
+            </div>
+        </a>
+        <div class="navbar-links">
+            <a href="{{ url_for('landing') }}#home"   class="nav-link" data-section="home">Home</a>
+            <a href="{{ url_for('landing') }}#about"  class="nav-link" data-section="about">About</a>
+            <a href="{{ url_for('landing') }}#community" class="nav-link" data-section="community">Community</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="{{ url_for('login') }}"  class="btn-outline">Login</a>
+            <a href="{{ url_for('register') }}" class="btn-filled">Sign Up</a>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="page-footer">
+        &copy; BELLITA 2026 <span>University of Cebu</span> &mdash; College of Computer Studies Sit-in Monitoring System
+    </footer>
+    {% endblock %}
+
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

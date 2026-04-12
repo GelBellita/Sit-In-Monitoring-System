@@ -1,0 +1,582 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Reservations — CCS Admin{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/admin_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="resv-admin-page">
+
+    <!-- ── Page Header ── -->
+    <div class="resv-page-header">
+        <div class="resv-page-header-left">
+            <div class="resv-page-icon"><i class="fa-solid fa-calendar-check"></i></div>
+            <div>
+                <div class="resv-page-title">Reservation Management</div>
+                <div class="resv-page-sub">Review requests, manage lab schedules &amp; monitor sessions</div>
+            </div>
+        </div>
+        <button class="btn-add-schedule" onclick="openScheduleModal()">
+            <i class="fa-solid fa-clock"></i> Add Lab Schedule
+        </button>
+    </div>
+
+    <!-- ── Stats Row ── -->
+    <div class="resv-stats-row">
+        <div class="resv-stat pending">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Pending') | list | length }}</div>
+            <div class="resv-stat-lbl">Pending</div>
+        </div>
+        <div class="resv-stat approved">
+            <i class="fa-solid fa-circle-check"></i>
+            <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Approved') | list | length }}</div>
+            <div class="resv-stat-lbl">Approved</div>
+        </div>
+        <div class="resv-stat rejected">
+            <i class="fa-solid fa-circle-xmark"></i>
+            <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Rejected') | list | length }}</div>
+            <div class="resv-stat-lbl">Rejected</div>
+        </div>
+        <div class="resv-stat total">
+            <i class="fa-solid fa-list"></i>
+            <div class="resv-stat-num">{{ reservations | length }}</div>
+            <div class="resv-stat-lbl">Total</div>
+        </div>
+    </div>
+
+    <!-- ── Tab Navigation ── -->
+    <div class="resv-tabs">
+        <button class="resv-tab active" data-tab="requests">
+            <i class="fa-solid fa-inbox"></i> Reservation Requests
+            {% set pending_count = reservations | selectattr('status', 'equalto', 'Pending') | list | length %}
+            {% if pending_count > 0 %}
+            <span class="tab-badge">{{ pending_count }}</span>
+            {% endif %}
+        </button>
+        <button class="resv-tab" data-tab="schedules">
+            <i class="fa-solid fa-calendar-days"></i> Lab Schedules
+            <span class="tab-badge tab-badge-blue">{{ schedules | length }}</span>
+        </button>
+        <button class="resv-tab" data-tab="logs">
+            <i class="fa-solid fa-scroll"></i> Activity Logs
+        </button>
+    </div>
+
+    <!-- ══ TAB: Reservation Requests ══ -->
+    <div class="resv-tab-panel active" id="tab-requests">
+        <div class="resv-card">
+            <div class="resv-card-toolbar">
+                <div class="toolbar-left">
+                    <div class="filter-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="resvFilterInput" placeholder="Filter by name, lab, date, PC…">
+                    </div>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="resv-table-wrap">
+                {% if reservations %}
+                <table class="resv-table" id="resvTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Laboratory</th>
+                            <th>PC</th>
+                            <th>Date</th>
+                            <th>Time Slot</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resvTbody">
+                        {% for r in reservations %}
+                        <tr class="resv-row"
+                            data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
+                            data-lab="{{ r['labRoom'] }}"
+                            data-date="{{ r['reserveDate'] }}"
+                            data-pc="{{ r['pcNumber'] }}"
+                            data-status="{{ r['status'] }}">
+                            <td class="row-num">{{ loop.index }}</td>
+                            <td>
+                                <div class="student-name-cell">
+                                    <div class="student-avatar-sm">
+                                        {{ r['firstName'][0] }}{{ r['lastName'][0] }}
+                                    </div>
+                                    <div>
+                                        <div class="sname">{{ r['lastName'] }}, {{ r['firstName'] }}</div>
+                                        <div class="scourse">{{ r['course'] }} · {{ r['studentId'] }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="lab-badge-pill">Lab {{ r['labRoom'] }}</span></td>
+                            <td><span class="pc-num-badge">PC {{ r['pcNumber'] }}</span></td>
+                            <td class="date-cell">{{ r['reserveDate'] }}</td>
+                            <td class="slot-cell">{{ r['timeSlot'] }}</td>
+                            <td><span class="purpose-chip">{{ r['purpose'] }}</span></td>
+                            <td>
+                                <span class="status-pill status-{{ r['status']|lower }}">
+                                    {% if r['status'] == 'Pending' %}<i class="fa-solid fa-hourglass-half"></i>
+                                    {% elif r['status'] == 'Approved' %}<i class="fa-solid fa-circle-check"></i>
+                                    {% else %}<i class="fa-solid fa-circle-xmark"></i>{% endif %}
+                                    {{ r['status'] }}
+                                </span>
+                                {% if r['status'] == 'Rejected' and r['rejectReason'] %}
+                                <div class="reject-reason-inline">
+                                    <i class="fa-solid fa-circle-info"></i> {{ r['rejectReason'] }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r['status'] == 'Pending' %}
+                                <div class="action-btns">
+                                    <form method="POST" action="{{ url_for('admin_reservation_action', resv_id=r['id']) }}" style="display:inline">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn-approve" title="Approve">
+                                            <i class="fa-solid fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    <button class="btn-reject-open reject-btn" title="Reject"
+                                            data-resv-id="{{ r['id'] }}"
+                                            data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
+                                            data-lab="Lab {{ r['labRoom'] }}"
+                                            data-date="{{ r['reserveDate'] }}"
+                                            data-slot="{{ r['timeSlot'] }}">
+                                        <i class="fa-solid fa-xmark"></i> Reject
+                                    </button>
+                                </div>
+                                {% elif r['status'] == 'Approved' %}
+                                    {% if r['sitInId'] and r['sitInStatus'] == 'Active' %}
+                                        <span class="status-sitin-active">
+                                            <i class="fa-solid fa-desktop"></i> Currently Sitting In
+                                        </span>
+                                    {% elif r['sitInId'] and r['sitInStatus'] == 'Done' %}
+                                        <span class="action-done" style="font-size:0.76rem;color:#10b981;">
+                                            <i class="fa-solid fa-circle-check"></i> Session Ended
+                                        </span>
+                                    {% else %}
+                                        <form method="POST"
+                                            action="{{ url_for('admin_reservation_sitin', resv_id=r['id']) }}"
+                                            style="display:inline">
+                                            <button type="submit" class="btn-sitin">
+                                                <i class="fa-solid fa-desktop"></i> Sit In
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="action-done">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <p>No reservations yet</p>
+                    <small>Student reservation requests will appear here.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB: Lab Schedules ══ -->
+    <div class="resv-tab-panel" id="tab-schedules">
+        <div class="resv-card">
+            <div class="sched-header">
+                <div>
+                    <div class="sched-title"><i class="fa-solid fa-calendar-days"></i> Class Schedules</div>
+                    <div class="sched-sub">Manage when labs are in use for classes. Click a schedule to modify which PCs can still be reserved.</div>
+                </div>
+            </div>
+
+            {% if schedules %}
+            <div class="sched-grid">
+                {% for s in schedules %}
+                <div class="sched-card">
+                    <div class="sched-card-top">
+                        <span class="sched-lab-badge">Lab {{ s['labRoom'] }}</span>
+                        <span class="sched-date">{{ s['schedDate'] }}</span>
+                    </div>
+                    <div class="sched-time">
+                        <i class="fa-regular fa-clock"></i> {{ s['timeSlot'] or 'No slot set' }}
+                    </div>
+                    {% if s['description'] %}
+                    <div class="sched-desc">{{ s['description'] }}</div>
+                    {% endif %}
+                    <div class="sched-overrides">
+                        <i class="fa-solid fa-desktop"></i>
+                        {{ s['override_count'] }} PC{{ 's' if s['override_count'] != 1 }} set as reservable
+                    </div>
+                    <div class="sched-actions">
+                        <button class="btn-sched-pcs manage-pcs-btn" data-sched-id="{{ s['id'] }}">
+                            <i class="fa-solid fa-desktop"></i> Manage PCs
+                        </button>
+                        <form method="POST" action="{{ url_for('admin_delete_schedule', sched_id=s['id']) }}"
+                              onsubmit="return confirm('Delete this schedule?')" style="display:inline">
+                            <button type="submit" class="btn-sched-del">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fa-regular fa-calendar"></i>
+                <p>No schedules added yet</p>
+                <small>Click "Add Lab Schedule" to block lab time for classes.</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ══ TAB: Activity Logs ══ -->
+    <div class="resv-tab-panel" id="tab-logs">
+        <div class="resv-card">
+            <div class="log-header">
+                <i class="fa-solid fa-scroll"></i> Reservation Activity Log
+            </div>
+            {% if logs %}
+            <div class="log-list">
+                {% for log in logs %}
+                <div class="log-item log-{{ log['action']|lower }}">
+                    <div class="log-icon">
+                        {% if log['action'] == 'Approved' %}
+                        <i class="fa-solid fa-circle-check"></i>
+                        {% else %}
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        {% endif %}
+                    </div>
+                    <div class="log-body">
+                        <div class="log-title">
+                            <strong>{{ log['action'] }}</strong> —
+                            {{ log['firstName'] }} {{ log['lastName'] }}
+                            <span class="log-resv-id">#{{ log['reservationId'] }}</span>
+                        </div>
+                        <div class="log-details">{{ log['details'] }}</div>
+                        <div class="log-time">{{ log['createdAt'] }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fa-solid fa-scroll"></i>
+                <p>No logs yet</p>
+                <small>Approval and rejection actions will be logged here.</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Reject Modal ── -->
+<div class="modal-backdrop" id="rejectModalBackdrop">
+    <div class="modal reject-modal">
+        <div class="reject-modal-header">
+            <i class="fa-solid fa-circle-xmark"></i>
+            <div>
+                <div class="reject-modal-title">Reject Reservation</div>
+                <div class="reject-modal-sub" id="rejectModalSub">Provide a reason for rejection</div>
+            </div>
+        </div>
+        <form method="POST" id="rejectForm" action="">
+            <input type="hidden" name="action" value="reject">
+            <div class="reject-presets">
+                <div class="reject-preset-label">Quick reasons:</div>
+                <div class="reject-presets-list">
+                    <button type="button" class="preset-btn" onclick="setReason('Lab will be used for class during this time slot.')">In-class use</button>
+                    <button type="button" class="preset-btn" onclick="setReason('Lab is under maintenance on this date.')">Maintenance</button>
+                    <button type="button" class="preset-btn" onclick="setReason('Maximum capacity reached for this time slot.')">Fully booked</button>
+                    <button type="button" class="preset-btn" onclick="setReason('Please reserve a different PC — this one is unavailable.')">PC unavailable</button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:14px;">
+                <label>Reason for rejection *</label>
+                <textarea name="rejectReason" id="rejectReasonInput" rows="3"
+                    placeholder="Explain why the reservation is being rejected. Students will see this message."></textarea>
+            </div>
+            <div class="reject-tip">
+                <i class="fa-solid fa-lightbulb"></i>
+                Tip: Let the student know if they can try reserving another PC or time slot.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeRejectModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fa-solid fa-xmark"></i> Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Add Schedule Modal (UPDATED: slot picker instead of time inputs) ── -->
+<div class="modal-backdrop" id="scheduleModalBackdrop">
+    <div class="modal schedule-modal">
+        <div class="modal-title">
+            <i class="fa-solid fa-calendar-plus" style="color:var(--blue)"></i> Add Lab Schedule
+        </div>
+        <form method="POST" action="{{ url_for('admin_add_schedule') }}" id="scheduleForm">
+
+            <div class="sched-form-grid">
+                <div class="form-group">
+                    <label>Laboratory</label>
+                    <select name="labRoom" required>
+                        <option value="" disabled selected>Select lab…</option>
+                        {% for lab in ['524','526','528','530','542','544'] %}
+                        <option value="{{ lab }}">Lab {{ lab }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="schedDate" required>
+                </div>
+            </div>
+
+            <!-- Time Slot Picker — same slots students see -->
+            <div class="form-group" style="margin-bottom:6px;">
+                <label style="display:flex;align-items:center;gap:6px;">
+                    <i class="fa-regular fa-clock" style="color:#1a2744;"></i>
+                    Time Slot <span style="color:#ef4444;margin-left:2px;">*</span>
+                </label>
+                <div class="sched-slot-picker" id="schedSlotPicker">
+                    {% set slot_list = [
+                        ('7:00 AM – 9:00 AM',  'fa-sun',       'Morning',   '7:00 – 9:00 AM'),
+                        ('9:00 AM – 11:00 AM', 'fa-cloud-sun', 'Morning',   '9:00 – 11:00 AM'),
+                        ('11:00 AM – 1:00 PM', 'fa-cloud-sun', 'Midday',    '11:00 AM – 1:00 PM'),
+                        ('1:00 PM – 3:00 PM',  'fa-cloud',     'Afternoon', '1:00 – 3:00 PM'),
+                        ('3:00 PM – 5:00 PM',  'fa-cloud',     'Afternoon', '3:00 – 5:00 PM'),
+                        ('5:00 PM – 7:00 PM',  'fa-moon',      'Evening',   '5:00 – 7:00 PM'),
+                    ] %}
+                    {% for value, icon, period, label in slot_list %}
+                    <button type="button" class="sched-slot-btn" data-slot="{{ value }}">
+                        <i class="fa-solid {{ icon }} sched-slot-icon"></i>
+                        <span class="sched-slot-label">{{ label }}</span>
+                        <span class="sched-slot-period">{{ period }}</span>
+                        <i class="fa-solid fa-check sched-slot-check"></i>
+                    </button>
+                    {% endfor %}
+                </div>
+                <!-- Hidden input that JS populates -->
+                <input type="hidden" name="timeSlot" id="schedTimeSlotInput" required>
+                <div class="sched-slot-error" id="schedSlotError" style="display:none;">
+                    Please select a time slot.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <input type="text" name="description" placeholder="e.g. IT301 — Database Management class">
+            </div>
+
+            <div class="sched-note">
+                <i class="fa-solid fa-info-circle"></i>
+                All 40 PCs will be marked <strong>In Use</strong> for this schedule's time slot.
+                After saving, click <strong>Manage PCs</strong> to open specific PCs for reservation.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeScheduleModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="schedSubmitBtn">
+                    <i class="fa-solid fa-plus"></i> Add Schedule
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── PC Override Modal ── -->
+<div class="modal-backdrop" id="pcOverrideBackdrop">
+    <div class="modal pc-override-modal">
+        <div class="pc-override-header">
+            <i class="fa-solid fa-desktop"></i>
+            <div>
+                <div class="pc-override-title">Manage PC Availability</div>
+                <div class="pc-override-sub" id="pcOverrideSub">Select PCs available for reservation</div>
+            </div>
+        </div>
+        <div class="pc-override-legend">
+            <span><span class="legend-dot dot-inuse"></span> In Use (class)</span>
+            <span><span class="legend-dot dot-avail"></span> Available to Reserve</span>
+        </div>
+        <div class="pc-override-grid" id="pcOverrideGrid"></div>
+        <div class="pc-override-summary" id="pcOverrideSummary">0 PCs set as available</div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-outline" onclick="closePCModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="savePCOverrides()">
+                <i class="fa-solid fa-floppy-disk"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.resv-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.resv-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.resv-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        var panelId = 'tab-' + this.dataset.tab;
+        document.getElementById(panelId)?.classList.add('active');
+    });
+});
+
+// ── Reservation filter ────────────────────────────────────────────────────────
+var resvFilter   = document.getElementById('resvFilterInput');
+var statusFilter = document.getElementById('statusFilter');
+var resvRows     = Array.from(document.querySelectorAll('.resv-row'));
+
+function filterResvTable() {
+    var q      = (resvFilter?.value || '').toLowerCase();
+    var status = (statusFilter?.value || '').toLowerCase();
+    var visible = 0;
+    resvRows.forEach(function(row) {
+        var matchQ = !q || [row.dataset.name, row.dataset.lab, row.dataset.date, row.dataset.pc]
+            .some(function(v) { return (v || '').toLowerCase().includes(q); });
+        var matchS = !status || row.dataset.status.toLowerCase() === status;
+        var show   = matchQ && matchS;
+        row.classList.toggle('hidden', !show);
+        if (show) { visible++; row.querySelector('.row-num').textContent = visible; }
+    });
+}
+resvFilter?.addEventListener('input', filterResvTable);
+statusFilter?.addEventListener('change', filterResvTable);
+
+// ── Reject modal ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.reject-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        openRejectModal(
+            this.dataset.resvId, this.dataset.name,
+            this.dataset.lab,    this.dataset.date, this.dataset.slot
+        );
+    });
+});
+function openRejectModal(resvId, name, lab, date, slot) {
+    document.getElementById('rejectForm').action = '/admin/reservation/action/' + resvId;
+    document.getElementById('rejectModalSub').textContent = name + ' — ' + lab + ' on ' + date + ' (' + slot + ')';
+    document.getElementById('rejectReasonInput').value = '';
+    document.getElementById('rejectModalBackdrop').classList.add('open');
+}
+function closeRejectModal() { document.getElementById('rejectModalBackdrop').classList.remove('open'); }
+function setReason(txt)     { document.getElementById('rejectReasonInput').value = txt; }
+
+// ── Schedule Modal ────────────────────────────────────────────────────────────
+function openScheduleModal() {
+    // Reset slot selection when opening
+    document.querySelectorAll('.sched-slot-btn').forEach(function(b) { b.classList.remove('selected'); });
+    document.getElementById('schedTimeSlotInput').value = '';
+    document.getElementById('schedSlotError').style.display = 'none';
+    document.getElementById('scheduleModalBackdrop').classList.add('open');
+}
+function closeScheduleModal() { document.getElementById('scheduleModalBackdrop').classList.remove('open'); }
+
+// Slot picker buttons
+document.querySelectorAll('.sched-slot-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.sched-slot-btn').forEach(function(b) { b.classList.remove('selected'); });
+        this.classList.add('selected');
+        document.getElementById('schedTimeSlotInput').value = this.dataset.slot;
+        document.getElementById('schedSlotError').style.display = 'none';
+    });
+});
+
+// Validate slot is selected before submit
+document.getElementById('scheduleForm')?.addEventListener('submit', function(e) {
+    if (!document.getElementById('schedTimeSlotInput').value) {
+        e.preventDefault();
+        document.getElementById('schedSlotError').style.display = 'block';
+        document.getElementById('schedSlotPicker').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// ── PC Override Modal ─────────────────────────────────────────────────────────
+document.querySelectorAll('.manage-pcs-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { openPCModal(this.dataset.schedId); });
+});
+
+var currentSchedId  = null;
+var currentAvailPcs = new Set();
+
+function openPCModal(schedId) {
+    currentSchedId = schedId;
+    document.getElementById('pcOverrideBackdrop').classList.add('open');
+    fetch('/admin/lab-schedule/' + schedId + '/pcs')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            currentAvailPcs = new Set(data.availablePcs || []);
+            var slotLabel = data.timeSlot || '';
+            document.getElementById('pcOverrideSub').textContent =
+                'Lab ' + data.labRoom + ' — ' + data.schedDate + (slotLabel ? ' · ' + slotLabel : '');
+            renderPCGrid();
+        });
+}
+function closePCModal() { document.getElementById('pcOverrideBackdrop').classList.remove('open'); }
+
+function renderPCGrid() {
+    var grid = document.getElementById('pcOverrideGrid');
+    grid.innerHTML = '';
+    for (var pc = 1; pc <= 40; pc++) {
+        (function(pcNum) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pc-override-btn ' + (currentAvailPcs.has(pcNum) ? 'pc-avail' : 'pc-inuse');
+            btn.innerHTML = '<i class="fa-solid fa-desktop"></i><span>' + pcNum + '</span>';
+            btn.title = 'PC ' + pcNum;
+            btn.addEventListener('click', function() {
+                if (currentAvailPcs.has(pcNum)) {
+                    currentAvailPcs.delete(pcNum);
+                    this.className = 'pc-override-btn pc-inuse';
+                } else {
+                    currentAvailPcs.add(pcNum);
+                    this.className = 'pc-override-btn pc-avail';
+                }
+                updatePCSummary();
+            });
+            grid.appendChild(btn);
+        })(pc);
+    }
+    updatePCSummary();
+}
+function updatePCSummary() {
+    var n = currentAvailPcs.size;
+    document.getElementById('pcOverrideSummary').textContent =
+        n + ' PC' + (n !== 1 ? 's' : '') + ' set as available for reservation';
+}
+function savePCOverrides() {
+    fetch('/admin/lab-schedule/' + currentSchedId + '/pcs/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ availablePcs: Array.from(currentAvailPcs) })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { if (data.ok) { closePCModal(); location.reload(); } });
+}
+
+// Close modals on backdrop click
+['rejectModalBackdrop', 'scheduleModalBackdrop', 'pcOverrideBackdrop'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el?.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('open');
+    });
+});
+</script>
+{% endblock %}

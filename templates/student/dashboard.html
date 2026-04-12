@@ -1,0 +1,169 @@
+{% extends 'student/studentLayout.html' %}
+
+{% block title %}Dashboard — CCS SitIn{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dash-grid">
+
+    <!-- LEFT: STUDENT INFO -->
+    <aside class="student-card">
+        <div class="card">
+            <div class="card-header ch-navy">
+                <div class="card-header-icon">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <span class="card-title">Student Information</span>
+            </div>
+            <div class="card-body">
+                <div class="student-avatar-wrap">
+                    {% if user['profileImage'] %}
+                    <img src="{{ url_for('static', filename='images/uploads/' + user['profileImage']) }}" alt="Profile" class="student-avatar">
+                    {% else %}
+                    <div class="student-avatar-placeholder">{{ user['firstName'][0]|upper }}{{ user['lastName'][0]|upper }}</div>
+                    {% endif %}
+                    <div class="student-name">{{ user['firstName'] }} {{ user['lastName'] }}{% if user['middleName'] %} {{ user['middleName'] }}{% endif %}</div>
+                    <div class="student-course-badge">{{ user['course'] }}</div>
+                </div>
+
+                {# Determine color class based on remaining sessions #}
+                {% set sess = user['sessions'] if user['sessions'] is not none else 0 %}
+                {% set sess_max = 30 if user['course'] in ('BSIT', 'BSCS') else 20 %}
+                {% set sess_pct = ((sess / sess_max) * 100) | int if sess_max > 0 else 0 %}
+                {% if sess_pct > 50 %}
+                    {% set sess_cls = 'sessions-ok' %}
+                {% elif sess_pct > 20 %}
+                    {% set sess_cls = 'sessions-mid' %}
+                {% else %}
+                    {% set sess_cls = 'sessions-low' %}
+                {% endif %}
+
+                <!-- FIX: sessions Jinja variables moved above .info-list so they
+                     are in scope, and the sessions row is now properly inside
+                     .info-list alongside the other rows. Previously the closing
+                     </div> of .info-list appeared before the sessions row,
+                     leaving it orphaned outside the list container. -->
+                <div class="info-list">
+                    <div class="info-row">
+                        <i class="fa-solid fa-id-card"></i>
+                        <div>
+                            <span class="info-label">ID Number</span>
+                            <span class="info-value">{{ user['idNumber'] }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <div>
+                            <span class="info-label">Course</span>
+                            <span class="info-value">{{ user['course'] }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <i class="fa-solid fa-calendar"></i>
+                        <div>
+                            <span class="info-label">Year Level</span>
+                            <span class="info-value">Year {{ user['yearLevel'] }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <i class="fa-solid fa-envelope"></i>
+                        <div>
+                            <span class="info-label">Email</span>
+                            <span class="info-value info-email">{{ user['email'] }}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <div>
+                            <span class="info-label">Address</span>
+                            <span class="info-value">{{ user['address'] or '—' }}</span>
+                        </div>
+                    </div>
+                    <!-- Sessions row — now correctly inside .info-list -->
+                    <div class="info-row sessions-text-row">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                        <div class="sessions-pill {{ sess_cls }}">
+                            <span class="sessions-pill-label">Sessions</span>
+                            <span class="sessions-pill-value">
+                                <span class="sessions-current">{{ sess }}</span>
+                                <span class="sessions-sep">/</span>
+                                <span class="sessions-max">{{ sess_max }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div><!-- /.info-list -->
+            </div><!-- /.card-body -->
+        </div><!-- /.card -->
+    </aside>
+
+    <!-- CENTER: ANNOUNCEMENTS -->
+    <section class="announcements-col">
+        <div class="card">
+            <div class="card-header ch-gold">
+                <div class="card-header-icon">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <span class="card-title">Announcements</span>
+                {% if announcements %}
+                <span class="ann-count-badge">{{ announcements|length }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if announcements %}
+                    {% for ann in announcements %}
+                    <div class="announcement-item">
+                        <div class="ann-meta">
+                            <span class="ann-author"><i class="fa-solid fa-shield-halved"></i> CCS Admin</span>
+                            <span class="ann-date">{{ ann['createdAt'][:10] }}</span>
+                        </div>
+                        {% if ann['title'] %}<div class="ann-title">{{ ann['title'] }}</div>{% endif %}
+                        <div class="ann-body">{{ ann['content'] }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fa-regular fa-bell-slash"></i>
+                        <p>No announcements yet</p>
+                        <small>Check back later for updates from the admin.</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- RIGHT: RULES & REGULATIONS -->
+    <aside class="rules-col">
+        <div class="card">
+            <div class="card-header ch-blue">
+                <div class="card-header-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <span class="card-title">Rules &amp; Regulations</span>
+            </div>
+            <div class="card-body">
+                <div class="rules-header-block">
+                    <strong>University of Cebu</strong>
+                    <span class="rules-heading-label">LABORATORY RULES AND REGULATIONS</span>
+                </div>
+                <p class="rules-intro">To avoid penalties, please observe the following at all times:</p>
+                <ol class="rules-list">
+                    <li>Students must present their ID before using the laboratory.</li>
+                    <li>No food, drinks, or smoking inside the laboratory at any time.</li>
+                    <li>Handle all equipment with care. Report any damage immediately.</li>
+                    <li>Log out of all accounts and properly shut down your PC before leaving.</li>
+                    <li>Arrange chairs and keep your workstation clean after each session.</li>
+                    <li>Unauthorized installation of software is strictly prohibited.</li>
+                    <li>Mobile phones must be on silent mode inside the laboratory.</li>
+                    <li>Students must log in via the Sit-in Monitoring System for every session.</li>
+                    <li>Maximum session duration is 2 hours per sit-in slot.</li>
+                    <li>Violators may have their lab privileges suspended or revoked.</li>
+                </ol>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
