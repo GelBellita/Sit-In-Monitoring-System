@@ -852,7 +852,7 @@ def admin_sitin():
 @admin_required
 def admin_students():
     conn     = get_db_connection()
-    students = conn.execute("SELECT * FROM users ORDER BY lastName").fetchall()
+    students = conn.execute("SELECT * FROM users ORDER BY rowid DESC").fetchall()
     conn.close()
     return render_template("admin/students.html", students=students)
 

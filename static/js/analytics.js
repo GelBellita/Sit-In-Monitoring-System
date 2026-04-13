@@ -1,9 +1,6 @@
 // ── analytics.js — Place in static/js/analytics.js
 (function () {
 
-    // ── Read data from <script type="application/json"> tag ──────────────────
-    // Using textContent instead of getAttribute() avoids Jinja2 HTML-attribute
-    // escaping that turns " into &#34; and breaks JSON.parse().
     const chartDataEl = document.getElementById('chartData');
     if (!chartDataEl) return;
 
@@ -80,7 +77,6 @@
         if (!ctx) return;
         if (!PURPOSE_LAB_DATA.length) { showEmpty(ctx, 'No purpose data yet'); return; }
 
-        // Jewel-tone palette — rich, saturated colors that match the navy/gold theme
         const JEWELS = [
             '#3b5bdb', '#f59e0b', '#10b981', '#ef4444',
             '#7c3aed', '#0891b2', '#ec4899', '#f97316',
@@ -88,20 +84,17 @@
         ];
         function getPastel(i) { return JEWELS[i % JEWELS.length]; }
 
-        // Aggregate counts across ALL labs per purpose
         const totals = {};
         PURPOSE_LAB_DATA.forEach(d => {
             if (!d.purpose) return;
             totals[d.purpose] = (totals[d.purpose] || 0) + d.cnt;
         });
 
-        // Sort descending so the biggest slice comes first
         const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
         const labels = sorted.map(([purpose]) => purpose);
         const values = sorted.map(([, cnt])   => cnt);
         const total  = values.reduce((s, v) => s + v, 0);
 
-        // Custom plugin: draw purpose name + % directly on each slice
         const sliceLabelPlugin = {
             id: 'pieSliceLabel',
             afterDraw(chart) {
@@ -110,10 +103,10 @@
                 meta.data.forEach((arc, i) => {
                     if (arc.hidden) return;
                     const arcSpan = arc.endAngle - arc.startAngle;
-                    if (arcSpan < 0.4) return; // skip slivers that are too thin
+                    if (arcSpan < 0.4) return;
 
                     const midAngle = arc.startAngle + arcSpan / 2;
-                    const r        = arc.outerRadius * 0.68; // 68% out from center
+                    const r        = arc.outerRadius * 0.68;
                     const x        = arc.x + Math.cos(midAngle) * r;
                     const y        = arc.y + Math.sin(midAngle) * r;
                     const pct      = ((values[i] / total) * 100).toFixed(1) + '%';
@@ -124,12 +117,10 @@
                     c.shadowColor  = 'rgba(0,0,0,0.18)';
                     c.shadowBlur   = 3;
 
-                    // Purpose name (line 1)
                     c.font      = 'bold 11px system-ui, sans-serif';
                     c.fillStyle = '#ffffff';
                     c.fillText(labels[i], x, y - 7);
 
-                    // Percentage (line 2)
                     c.font      = '10px system-ui, sans-serif';
                     c.fillStyle = 'rgba(255,255,255,0.85)';
                     c.fillText(pct, x, y + 7);
@@ -194,12 +185,9 @@
         const ctx = document.getElementById('hoursDonutChart');
         if (!ctx) return;
 
-        // Use all labs that have at least 1 visit — don't require minutes > 0
-        // because Active sessions haven't been logged out yet (totalMinutes = 0)
         const data = LAB_VISITS_DATA.filter(d => d.total_visits > 0);
         if (!data.length) { showEmpty(ctx, 'No hours data yet'); return; }
 
-        // Fall back to showing visit counts when no session has been closed yet
         const useHours = data.some(d => d.total_minutes > 0);
         const values   = data.map(d =>
             useHours
@@ -208,7 +196,6 @@
         );
         const unit = useHours ? 'hrs' : 'sessions';
 
-        // Custom plugin: draw "X.Xh" or "X sessions" labels on each visible slice
         const donutLabelPlugin = {
             id: 'donutSliceLabel',
             afterDraw(chart) {
@@ -219,15 +206,13 @@
                     const val = values[i];
                     if (!val) return;
 
-                    // midpoint angle of this arc
                     const midAngle  = arc.startAngle + (arc.endAngle - arc.startAngle) / 2;
                     const outerR    = arc.outerRadius;
                     const innerR    = arc.innerRadius;
-                    const labelR    = innerR + (outerR - innerR) * 0.55; // sit in the band
+                    const labelR    = innerR + (outerR - innerR) * 0.55;
                     const x         = arc.x + Math.cos(midAngle) * labelR;
                     const y         = arc.y + Math.sin(midAngle) * labelR;
 
-                    // Only draw if the arc is tall enough to fit text
                     const arcSpan = arc.endAngle - arc.startAngle;
                     if (arcSpan < 0.35) return;
 
@@ -306,7 +291,7 @@
             <div class="lb-modal-hero">
               <div class="lb-modal-composite" id="lbModalComposite"></div>
               <div class="lb-modal-composite-lbl">Composite Score</div>
-              <div class="lb-modal-formula">= (Admin Rating pts × 50%) + (Hours score × 30%) + (Task rate × 20%)</div>
+              <div class="lb-modal-formula">= (Admin Rating pts × 50%) + (Session Hours × 30%) + (Task rate × 20%)</div>
             </div>
 
             <div class="lb-modal-breakdown">
@@ -327,7 +312,7 @@
               <div class="lb-calc-block">
                 <div class="lb-calc-header">
                   <span class="lb-calc-icon" style="background:#d1fae5;color:#065f46">⏱</span>
-                  <span class="lb-calc-label">Total Hours <span class="lb-calc-weight">— 30% of score</span></span>
+                  <span class="lb-calc-label">Total Hours <span class="lb-calc-weight">(timeOut − timeIn per session) — 30% of score</span></span>
                   <span class="lb-calc-contrib" id="lbHoursContrib"></span>
                 </div>
                 <div class="lb-calc-steps" id="lbHoursSteps"></div>
@@ -388,10 +373,12 @@
             const hoursWeighted  = parseFloat((hoursNorm  * 0.30).toFixed(2));
             const taskWeighted   = parseFloat((taskRate   * 0.20).toFixed(2));
 
+            const sessionCount = d.total_sessions;
+
             // ── Admin Rating ─────────────────────────────────────────────────
             html('lbRatingSteps',
                 row2('Stars given by admin across all sessions',
-                     '<strong>' + d.total_admin_rating + ' stars</strong> (' + d.total_sessions + ' session' + (d.total_sessions !== 1 ? 's' : '') + ')') +
+                     '<strong>' + d.total_admin_rating + ' stars</strong> (' + sessionCount + ' session' + (sessionCount !== 1 ? 's' : '') + ')') +
                 row2('Convert to points &nbsp;<span class="lb-calc-dim">' + d.total_admin_rating + ' stars ÷ 3</span>',
                      '<strong>' + ratingNorm.toFixed(2) + ' pts</strong>') +
                 row2('Apply 50% weight &nbsp;<span class="lb-calc-dim">' + ratingNorm.toFixed(2) + ' × 0.50</span>',
@@ -402,8 +389,15 @@
 
             // ── Total Hours ──────────────────────────────────────────────────
             const cappedNote = hoursNorm >= 100 ? ' ✓ Target reached!' : ' (target: ' + HOURS_TARGET + ' hrs)';
+            const hoursNote  =
+                '<div style="font-size:0.72rem;color:#94a3b8;margin-bottom:6px;padding-left:2px;">' +
+                'Each session\'s duration = timeOut − timeIn, summed across all ' +
+                sessionCount + ' session' + (sessionCount !== 1 ? 's' : '') + '.' +
+                '</div>';
+
             html('lbHoursSteps',
-                row2('Total time spent in the lab',
+                hoursNote +
+                row2('Total time logged &nbsp;<span class="lb-calc-dim">(sum of timeOut − timeIn per session)</span>',
                      '<strong>' + hoursLogged + ' hrs</strong> (' + d.total_minutes + ' min)') +
                 row2('Hours score &nbsp;<span class="lb-calc-dim">(' + hoursLogged + ' ÷ ' + HOURS_TARGET + ' hrs target) × 100, max 100</span>',
                      '<strong>' + hoursNorm.toFixed(1) + ' / 100</strong><span class="lb-calc-dim">' + cappedNote + '</span>') +
@@ -416,8 +410,8 @@
             // ── Task Completion ──────────────────────────────────────────────
             html('lbTaskSteps',
                 row2('Sessions where task was marked complete',
-                     '<strong>' + d.tasks_done + ' out of ' + d.total_sessions + ' session' + (d.total_sessions !== 1 ? 's' : '') + '</strong>') +
-                row2('Completion rate &nbsp;<span class="lb-calc-dim">(' + d.tasks_done + ' ÷ ' + d.total_sessions + ') × 100</span>',
+                     '<strong>' + d.tasks_done + ' out of ' + sessionCount + ' session' + (sessionCount !== 1 ? 's' : '') + '</strong>') +
+                row2('Completion rate &nbsp;<span class="lb-calc-dim">(' + d.tasks_done + ' ÷ ' + sessionCount + ') × 100</span>',
                      '<strong>' + taskRate.toFixed(1) + '%</strong>') +
                 row2('Apply 20% weight &nbsp;<span class="lb-calc-dim">' + taskRate.toFixed(1) + ' × 0.20</span>',
                      '<strong class="lb-calc-result">+' + taskWeighted + ' pts</strong>')
