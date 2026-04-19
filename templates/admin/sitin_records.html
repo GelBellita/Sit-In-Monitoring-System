@@ -4,6 +4,28 @@
 
 {% block extra_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/sitin_records.css') }}">
+<style>
+/* ── Duration badge ──────────────────────────────────────────────────────── */
+.duration-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.72rem; font-weight: 700;
+    padding: 2px 9px; border-radius: 20px;
+    white-space: nowrap;
+}
+.duration-badge.dur-short  { background: #f0fdf4; color: #065f46; border: 1.5px solid #6ee7b7; }
+.duration-badge.dur-medium { background: #fffbeb; color: #92400e; border: 1.5px solid #fcd34d; }
+.duration-badge.dur-long   { background: #fff5f5; color: #991b1b; border: 1.5px solid #fca5a5; }
+.duration-badge.dur-active { background: #eff6ff; color: #1e40af; border: 1.5px solid #93c5fd; }
+.duration-badge.dur-na     { background: #f8fafc; color: #94a3b8; border: 1.5px solid #e2e8f0; }
+
+/* ── Time cell style ─────────────────────────────────────────────────────── */
+.time-block {
+    display: flex; flex-direction: column; gap: 2px;
+}
+.time-main { font-size: 0.82rem; font-weight: 700; color: #1a2744; }
+.time-date { font-size: 0.68rem; color: #94a3b8; }
+.time-none { font-size: 0.8rem; color: #94a3b8; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -62,20 +84,26 @@
                         <th>Purpose</th>
                         <th>Lab</th>
                         <th>PC</th>
-                        <th>Login</th>
-                        <th>Logout</th>
-                        <th>Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Duration</th>
                     </tr>
                 </thead>
                 <tbody id="recordsTbody">
                     {% for r in records %}
+                    {% set timein_str  = r['timeIn']  if r['timeIn']  else '' %}
+                    {% set timeout_str = r['timeOut'] if r['timeOut'] else '' %}
+
+                    {# Compute duration class via totalMinutes if available #}
+                    {% set mins = r['totalMinutes'] if r['totalMinutes'] else 0 %}
+
                     <tr class="record-row"
                         data-id="{{ r['studentId'] }}"
                         data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
                         data-course="{{ r['course'] or '' }}"
                         data-purpose="{{ r['purpose'] or '' }}"
                         data-lab="{{ r['labRoom'] }}"
-                        data-date="{{ r['timeIn'][:10] if r['timeIn'] else '' }}">
+                        data-date="{{ timein_str[:10] if timein_str else '' }}">
                         <td class="row-num">{{ loop.index }}</td>
                         <td><span class="id-link">{{ r['studentId'] }}</span></td>
                         <td class="name-cell">{{ r['lastName'] }}, {{ r['firstName'] }}</td>
@@ -106,14 +134,64 @@
                                 <span style="color:#94a3b8;font-size:0.8rem;">—</span>
                             {% endif %}
                         </td>
-                        <td class="time-cell">
-                            {% if r['timeIn'] %}{{ r['timeIn'][11:16] }}{% else %}—{% endif %}
+
+                        <!-- Time In -->
+                        <td>
+                            {% if timein_str %}
+                            <div class="time-block">
+                                <span class="time-main">{{ timein_str[11:16] | to12h }}</span>
+                                <span class="time-date">{{ timein_str[:10] }}</span>
+                            </div>
+                            {% else %}
+                            <span class="time-none">—</span>
+                            {% endif %}
                         </td>
-                        <td class="time-cell">
-                            {% if r['timeOut'] %}{{ r['timeOut'][11:16] }}{% else %}—{% endif %}
+
+                        <!-- Time Out -->
+                        <td>
+                            {% if timeout_str %}
+                            <div class="time-block">
+                                <span class="time-main">{{ timeout_str[11:16] | to12h }}</span>
+                                <span class="time-date">{{ timeout_str[:10] }}</span>
+                            </div>
+                            {% elif r['status'] == 'Active' %}
+                            <span class="duration-badge dur-active">
+                                <i class="fa-solid fa-circle" style="font-size:.45rem;animation:blink 1s infinite"></i>
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="time-none">—</span>
+                            {% endif %}
                         </td>
-                        <td class="date-cell">
-                            {% if r['timeIn'] %}{{ r['timeIn'][:10] }}{% else %}—{% endif %}
+
+                        <!-- Duration -->
+                        <td>
+                            {% if r['status'] == 'Active' %}
+                                <span class="duration-badge dur-active">
+                                    <i class="fa-solid fa-clock"></i> In progress
+                                </span>
+                            {% elif mins > 0 %}
+                                {% set hours = (mins // 60) %}
+                                {% set rem_m = (mins % 60) %}
+                                {% if mins >= 120 %}
+                                    {% set dur_cls = 'dur-long' %}
+                                {% elif mins >= 60 %}
+                                    {% set dur_cls = 'dur-medium' %}
+                                {% else %}
+                                    {% set dur_cls = 'dur-short' %}
+                                {% endif %}
+                                <span class="duration-badge {{ dur_cls }}">
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                    {% if hours > 0 %}{{ hours }}h {% endif %}{{ rem_m }}m
+                                </span>
+                            {% elif timeout_str and timein_str %}
+                                {# Fallback: display times are present but totalMinutes=0 #}
+                                <span class="duration-badge dur-na">
+                                    <i class="fa-solid fa-hourglass-end"></i> &lt;1m
+                                </span>
+                            {% else %}
+                                <span class="duration-badge dur-na">—</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -136,6 +214,13 @@
     </div>
 
 </div>
+
+<style>
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .3; }
+}
+</style>
 
 <script id="chartData" type="application/json">
 {

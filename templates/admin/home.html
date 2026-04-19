@@ -1,96 +1,116 @@
 {% extends 'admin/layout.html' %}
 {% block title %}Home — CCS Admin{% endblock %}
 
-{% block content %}
-<div class="dashboard-container">
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/home.css') }}">
+{% endblock %}
 
-    <!-- Left: Dashboard Side Panel -->
-    <aside class="dashboard-panel">
-        <div class="page-title"><i class="fa-solid fa-house"></i> Dashboard </div>
-        <div class="stats-column">
-            <div class="stat-card blue">
-                <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
-                <div>
-                    <div class="stat-num">{{ total_registered }}</div>
-                    <div class="stat-lbl">Students Registered</div>
-                </div>
-            </div>
-            <div class="stat-card green">
-                <div class="stat-icon green"><i class="fa-solid fa-desktop"></i></div>
-                <div>
-                    <div class="stat-num">{{ currently_sitin }}</div>
-                    <div class="stat-lbl">Currently Sit-In</div>
-                </div>
-            </div>
-            <div class="stat-card amber">
-                <div class="stat-icon amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                <div>
-                    <div class="stat-num">{{ total_sitin }}</div>
-                    <div class="stat-lbl">Total Sit-In (All Time)</div>
-                </div>
+{% block content %}
+<div class="dashboard-wrapper">
+
+    <!-- ══ LEFT STICKY SIDEBAR ══════════════════════════════════════════════ -->
+    <div class="stats-sidebar">
+        <div class="sidebar-heading">Overview</div>
+
+        <div class="stat-card-v2 blue">
+            <div class="stat-icon-v2"><i class="fa-solid fa-users"></i></div>
+            <div>
+                <div class="stat-num-v2">{{ total_registered }}</div>
+                <div class="stat-lbl-v2">Students Registered</div>
             </div>
         </div>
-    </aside>
 
-    <!-- Right: Announcements Panel -->
-    <!-- FIX: original was missing closing </div> for .card-body, </div> for
-         .card, and </section> — causing Jinja block inheritance to break and
-         everything after the announcements list to be swallowed. -->
-    <section class="announcements-panel">
-        <div class="card">
-            <div class="card-header"><i class="fa-solid fa-bullhorn"></i> Announcements</div>
-            <div class="card-body">
+        <div class="stat-card-v2 green">
+            <div class="stat-icon-v2"><i class="fa-solid fa-desktop"></i></div>
+            <div>
+                <div class="stat-num-v2">{{ currently_sitin }}</div>
+                <div class="stat-lbl-v2">Currently Sit-In</div>
+            </div>
+        </div>
 
-                <!-- Post form -->
-                <form method="POST" action="{{ url_for('admin_announcement') }}" style="margin-bottom:24px;">
-                    <div class="form-group">
-                        <label>Title <span style="color:var(--muted);font-weight:400;text-transform:none">(optional)</span></label>
-                        <input type="text" name="title" placeholder="Announcement title…">
+        <div class="stat-card-v2 amber">
+            <div class="stat-icon-v2"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div>
+                <div class="stat-num-v2">{{ total_sitin }}</div>
+                <div class="stat-lbl-v2">Total Sit-In (All Time)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MAIN CONTENT ═════════════════════════════════════════════════════ -->
+    <div class="dashboard-main">
+
+        <!-- ── Flash messages live here so they don't push the sidebar ── -->
+        <div class="flash-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        <i class="fa-solid {% if category=='success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                        {{ message }}
                     </div>
-                    <div class="form-group">
-                        <label>Content <span style="color:var(--danger)">*</span></label>
-                        <textarea name="content" placeholder="Write your announcement here…" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Post Announcement</button>
+                {% endfor %}
+            {% endwith %}
+        </div>
+
+        <!-- ── Announcements ─────────────────────────────────────────────── -->
+        <div class="ann-panel">
+            <div class="ann-panel-header">
+                <div class="ann-panel-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                <div>
+                    <div class="ann-panel-title">Announcements</div>
+                    <div class="ann-panel-sub">Post updates visible to all students</div>
+                </div>
+            </div>
+
+            <div class="ann-compose">
+                <div class="ann-compose-title"><i class="fa-solid fa-pen-to-square"></i> &nbsp;New Announcement</div>
+                <form method="POST" action="{{ url_for('admin_announcement') }}">
+                    <input type="text" name="title" placeholder="Title (optional)…">
+                    <textarea name="content" placeholder="Write your announcement here…" required></textarea>
+                    <button type="submit" class="ann-post-btn">
+                        <i class="fa-solid fa-paper-plane"></i> Post Announcement
+                    </button>
                 </form>
+            </div>
 
-                <hr style="border:none;border-top:1px solid var(--border);margin-bottom:20px;">
-
-                <h3 style="font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:14px;">
-                    <i class="fa-solid fa-list" style="color:var(--blue)"></i> Posted Announcements
-                </h3>
-
+            <div class="ann-list">
+                <div class="ann-list-title"><i class="fa-solid fa-list"></i> &nbsp;Posted ({{ announcements|length }})</div>
                 {% if announcements %}
                     {% for ann in announcements %}
-                    <div class="posted-announcement">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-                            <div>
-                                <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px;">
-                                    <i class="fa-solid fa-user-shield"></i> {{ ann['createdBy'] }}
-                                    &nbsp;|&nbsp;
-                                    <i class="fa-regular fa-calendar"></i> {{ ann['createdAt'][:10] }}
-                                </div>
-                                {% if ann['title'] %}
-                                <div style="font-weight:700;color:var(--navy);margin-bottom:5px;">{{ ann['title'] }}</div>
-                                {% endif %}
-                                <div style="font-size:.88rem;color:var(--text);">{{ ann['content'] }}</div>
-                            </div>
-                            <form method="POST" action="{{ url_for('admin_delete_announcement', ann_id=ann['id']) }}" onsubmit="return confirm('Delete this announcement?')">
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                            </form>
+                    <div class="ann-item">
+                        <div class="ann-item-meta">
+                            <span class="ann-item-badge">Admin</span>
+                            <span class="ann-item-meta-dot"></span>
+                            <i class="fa-regular fa-calendar" style="font-size:.65rem"></i>
+                            {{ ann['createdAt'][:10] }}
+                            <span class="ann-item-meta-dot"></span>
+                            {{ ann['createdAt'][11:16] }}
                         </div>
+                        {% if ann['title'] %}
+                        <div class="ann-item-title">{{ ann['title'] }}</div>
+                        {% endif %}
+                        <div class="ann-item-content">{{ ann['content'] }}</div>
+                        <form method="POST" action="{{ url_for('admin_delete_announcement', ann_id=ann['id']) }}"
+                              onsubmit="return confirm('Delete this announcement?')">
+                            <button type="submit" class="ann-delete-btn" title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <div class="empty-state">
+                    <div class="ann-empty">
                         <i class="fa-regular fa-bell-slash"></i>
                         <p>No announcements yet.</p>
                     </div>
                 {% endif %}
+            </div>
+        </div>
 
-            </div><!-- /.card-body -->
-        </div><!-- /.card -->
-    </section>
+    </div><!-- /.dashboard-main -->
+</div><!-- /.dashboard-wrapper -->
+{% endblock %}
 
-</div><!-- /.dashboard-container -->
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 {% endblock %}

@@ -11,9 +11,9 @@
 {# tojson WITHOUT | e — tojson is already HTML-safe; adding | e double-escapes quotes and breaks JSON.parse() #}
 <script id="chartData" type="application/json">
 {
-    "lab_visits":     {{ lab_visits      | tojson }},
+    "lab_visits":      {{ lab_visits      | tojson }},
     "purpose_per_lab": {{ purpose_per_lab | tojson }},
-    "hours_target":   {{ hours_target }}
+    "hours_target": {{ hours_per_session }}
 }
 </script>
 
@@ -104,227 +104,469 @@
         </div>
     </div>
 
-    <!-- Leaderboard -->
-    <div class="leaderboard-card">
-        <div class="leaderboard-header">
-            <div class="leaderboard-header-left">
-                <div class="leaderboard-icon"><i class="fa-solid fa-trophy"></i></div>
-                <div>
-                    <div class="leaderboard-title">Top 10 Student Leaderboard</div>
-                    <div class="leaderboard-sub">
-                        Composite: 50% admin rating · 30% total hours · 20% task completion
-                        &nbsp;·&nbsp; <em>Click a row to see exactly how the score was calculated</em>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% if leaderboard %}
-        <div class="leaderboard-table-wrap">
-            <table class="leaderboard-table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Student</th>
-                        <th>Sessions</th>
-                        <th>Admin Rating</th>
-                        <th>Total Hours</th>
-                        <th>Task Rate</th>
-                        <th>Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in leaderboard %}
-                    <tr class="lb-row {% if loop.index <= 3 %}lb-top3{% endif %}"
-                        data-student='{{ {
-                            "firstName":          s["firstName"],
-                            "lastName":           s["lastName"],
-                            "course":             s["course"],
-                            "yearLevel":          s["yearLevel"],
-                            "total_sessions":     s["total_sessions"],
-                            "total_admin_rating": s["total_admin_rating"],
-                            "total_minutes":      s["total_minutes"],
-                            "tasks_done":         s["tasks_done"],
-                            "task_rate":          s["task_rate"],
-                            "hours_norm":         s["hours_norm"],
-                            "rating_norm":        s["rating_norm"],
-                            "composite":          s["composite"]
-                        } | tojson }}'>
-                        <td>
-                            <div class="rank-badge rank-{{ loop.index }}">
-                                {% if loop.index == 1 %}🥇
-                                {% elif loop.index == 2 %}🥈
-                                {% elif loop.index == 3 %}🥉
-                                {% else %}{{ loop.index }}{% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="lb-student-cell">
-                                <div class="lb-avatar">{{ s['firstName'][0] }}{{ s['lastName'][0] }}</div>
-                                <div>
-                                    <div class="lb-name">{{ s['lastName'] }}, {{ s['firstName'] }}</div>
-                                    <div class="lb-meta">{{ s['course'] }} · {{ s['yearLevel'] }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="lb-num">{{ s['total_sessions'] }}</td>
-                        <td>
-                            <div class="lb-rating-cell">
-                                <span class="lb-num">{{ s['total_admin_rating'] }}★</span>
-                                <span class="lb-pts-hint">= {{ "%.2f"|format(s['rating_norm']) }} pts</span>
-                            </div>
-                        </td>
-                        <td class="lb-num">{{ "%.1f"|format(s['total_minutes'] / 60) }}h</td>
-                        <td>
-                            <div class="lb-taskrate">
-                                <div class="taskrate-bar">
-                                    <div class="taskrate-fill" data-rate="{{ s['task_rate'] }}"></div>
-                                </div>
-                                <span class="lb-num">{{ s['task_rate'] }}%</span>
-                            </div>
-                        </td>
-                        <td><span class="score-badge">{{ s['composite'] }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding:48px">
-            <i class="fa-solid fa-trophy"></i>
-            <p>No data yet</p>
-            <small>Leaderboard will populate once students have sit-in sessions.</small>
-        </div>
-        {% endif %}
-    </div>
-
 </div>
 
-<style>
-/* ── Leaderboard Modal ─────────────────────────────────────────────────────── */
-.lb-modal-overlay {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(10,15,30,.65); backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-.lb-modal-box {
-    background: #fff; border-radius: 16px;
-    box-shadow: 0 24px 60px rgba(0,0,0,.25);
-    width: 100%; max-width: 540px; max-height: 90vh;
-    overflow-y: auto; animation: lbIn .2s ease;
-}
-@keyframes lbIn { from { opacity:0; transform:translateY(16px) scale(.97) } to { opacity:1; transform:none } }
+<!-- ── Robot FAB ─────────────────────────────────────────────────────────── -->
+<button class="ai-fab" id="aiFab" title="AI Lab Recommendations">
+    <div class="ai-fab-robot">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Antenna -->
+            <line x1="32" y1="6" x2="32" y2="14" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="32" cy="5" r="3" fill="#F5A623"/>
+            <!-- Head -->
+            <rect x="14" y="14" width="36" height="26" rx="7" fill="#1a2744"/>
+            <rect x="14" y="14" width="36" height="26" rx="7" stroke="#3b5bdb" stroke-width="1.5"/>
+            <!-- Eyes -->
+            <circle cx="24" cy="27" r="5" fill="#3b5bdb"/>
+            <circle cx="40" cy="27" r="5" fill="#3b5bdb"/>
+            <circle cx="24" cy="27" r="2.5" fill="#93c5fd" class="robot-eye"/>
+            <circle cx="40" cy="27" r="2.5" fill="#93c5fd" class="robot-eye"/>
+            <circle cx="25" cy="26" r="1" fill="#fff"/>
+            <circle cx="41" cy="26" r="1" fill="#fff"/>
+            <!-- Mouth -->
+            <path d="M24 35 Q32 40 40 35" stroke="#F5A623" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <!-- Ears -->
+            <rect x="10" y="20" width="4" height="10" rx="2" fill="#3b5bdb"/>
+            <rect x="50" y="20" width="4" height="10" rx="2" fill="#3b5bdb"/>
+            <!-- Body -->
+            <rect x="18" y="42" width="28" height="18" rx="5" fill="#1a2744" stroke="#3b5bdb" stroke-width="1.5"/>
+            <!-- Body buttons -->
+            <circle cx="26" cy="51" r="3" fill="#F5A623" opacity="0.85"/>
+            <circle cx="32" cy="51" r="3" fill="#3b5bdb" opacity="0.85"/>
+            <circle cx="38" cy="51" r="3" fill="#10b981" opacity="0.85"/>
+            <!-- Arms -->
+            <rect x="6"  y="43" width="12" height="5" rx="2.5" fill="#1a2744" stroke="#3b5bdb" stroke-width="1.5"/>
+            <rect x="46" y="43" width="12" height="5" rx="2.5" fill="#1a2744" stroke="#3b5bdb" stroke-width="1.5"/>
+        </svg>
+    </div>
+    <span class="ai-fab-label">AI Insights</span>
+    <!-- Green online dot -->
+    <div class="ai-fab-dot"></div>
+</button>
 
-.lb-modal-header {
-    display: flex; align-items: center; gap: 14px;
-    padding: 20px 22px 16px; border-bottom: 1px solid #f0f3f8; position: relative;
-}
-.lb-modal-avatar {
-    width: 50px; height: 50px; border-radius: 50%;
-    background: #1a2744; color: #F5A623;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; font-weight: 800; flex-shrink: 0;
-}
-.lb-modal-name { font-size: 1rem; font-weight: 800; color: #1a2744; }
-.lb-modal-meta { font-size: 0.74rem; color: #94a3b8; margin-top: 2px; }
-.lb-modal-close {
-    position: absolute; top: 14px; right: 14px;
-    width: 30px; height: 30px; border: none; background: #f1f5f9;
-    border-radius: 50%; font-size: 1.1rem; cursor: pointer; color: #64748b;
-    display: flex; align-items: center; justify-content: center;
-}
-.lb-modal-close:hover { background: #e2e8f0; color: #1a2744; }
+<!-- ── AI Panel ──────────────────────────────────────────────────────────── -->
+<div class="ai-panel-overlay" id="aiOverlay">
+    <div class="ai-panel">
 
-.lb-modal-hero {
-    text-align: center; padding: 20px 20px 16px; border-bottom: 1px solid #f0f3f8;
-    background: linear-gradient(135deg, #f8faff, #f0f4ff);
-}
-.lb-modal-composite {
-    font-size: 3.2rem; font-weight: 900; line-height: 1;
-    background: linear-gradient(135deg, #1a2744, #3b5bdb);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.lb-modal-composite-lbl {
-    font-size: 0.7rem; font-weight: 700; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: .5px; margin-top: 4px;
-}
-.lb-modal-formula {
-    font-size: 0.72rem; color: #64748b; margin-top: 8px;
-    background: #eef2ff; display: inline-block; padding: 4px 10px; border-radius: 20px;
-}
+        <div class="ai-panel-header">
+            <div class="ai-panel-header-left">
+                <div class="ai-panel-avatar">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;">
+                        <line x1="32" y1="4" x2="32" y2="11" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="32" cy="3.5" r="2.5" fill="#F5A623"/>
+                        <rect x="12" y="11" width="40" height="28" rx="8" fill="#1a2744"/>
+                        <rect x="12" y="11" width="40" height="28" rx="8" stroke="#3b5bdb" stroke-width="1.5"/>
+                        <circle cx="23" cy="25" r="5" fill="#3b5bdb"/><circle cx="41" cy="25" r="5" fill="#3b5bdb"/>
+                        <circle cx="23" cy="25" r="2.5" fill="#93c5fd"/><circle cx="41" cy="25" r="2.5" fill="#93c5fd"/>
+                        <circle cx="24" cy="24" r="1" fill="#fff"/><circle cx="42" cy="24" r="1" fill="#fff"/>
+                        <path d="M23 33 Q32 38 41 33" stroke="#F5A623" stroke-width="2" stroke-linecap="round" fill="none"/>
+                        <rect x="9"  y="18" width="3" height="9" rx="1.5" fill="#3b5bdb"/>
+                        <rect x="52" y="18" width="3" height="9" rx="1.5" fill="#3b5bdb"/>
+                        <rect x="16" y="41" width="32" height="18" rx="5" fill="#1a2744" stroke="#3b5bdb" stroke-width="1.5"/>
+                        <circle cx="24" cy="50" r="2.5" fill="#F5A623" opacity="0.9"/>
+                        <circle cx="32" cy="50" r="2.5" fill="#3b5bdb" opacity="0.9"/>
+                        <circle cx="40" cy="50" r="2.5" fill="#10b981" opacity="0.9"/>
+                        <rect x="4"  y="42" width="12" height="5" rx="2.5" fill="#1a2744" stroke="#3b5bdb" stroke-width="1.5"/>
+                        <rect x="48" y="42" width="12" height="5" rx="2.5" fill="#1a2744" stroke="#3b5bdb" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="ai-panel-title">CCS Lab Assistant</div>
+                    <div class="ai-panel-sub">Smart recommendations · Based on your actual data</div>
+                </div>
+            </div>
+            <button class="ai-panel-close" id="aiPanelClose">&times;</button>
+        </div>
 
-.lb-modal-breakdown { padding: 18px 22px; border-bottom: 1px solid #f0f3f8; }
-.lb-modal-section-title {
-    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .5px; color: #94a3b8; margin-bottom: 14px;
-}
+        <div class="ai-panel-body">
 
-.lb-calc-block { margin-bottom: 16px; }
-.lb-calc-header {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
-}
-.lb-calc-icon {
-    width: 30px; height: 30px; border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; flex-shrink: 0;
-}
-.lb-calc-label { font-size: 0.83rem; font-weight: 700; color: #1a2744; flex: 1; }
-.lb-calc-weight { font-size: 0.72rem; font-weight: 400; color: #94a3b8; }
-.lb-calc-contrib {
-    font-size: 0.9rem; font-weight: 800; color: #1a2744;
-    background: #f0f4ff; padding: 2px 10px; border-radius: 20px;
-    white-space: nowrap;
-}
+            <!-- Idle state -->
+            <div id="aiIdleState">
+                <div class="ai-idle-icon">🤖</div>
+                <div class="ai-idle-title">Ready to analyze your lab data</div>
+                <div class="ai-idle-desc">
+                    I'll calculate recommendations from your real sit-in records —
+                    which lab is least crowded, which suits each purpose best, and more.
+                </div>
+                <button class="ai-analyze-btn" id="aiAnalyzeBtn">
+                    ✨ &nbsp;Generate Recommendations
+                </button>
+            </div>
 
-.lb-calc-steps { margin-bottom: 8px; }
-.lb-calc-step {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 5px 10px; background: #fafbfc; border-radius: 6px; margin-bottom: 3px;
-    font-size: 0.78rem;
-}
-.lb-calc-step-label { color: #64748b; flex: 1; padding-right: 10px; }
-.lb-calc-step-value { color: #374151; white-space: nowrap; }
-.lb-calc-result     { color: #1a2744 !important; font-size: 0.83rem; }
-.lb-calc-dim        { color: #94a3b8; font-size: 0.72rem; }
+            <!-- Loading state -->
+            <div id="aiLoadingState" style="display:none">
+                <div class="ai-think-dots">
+                    <div class="ai-dot"></div>
+                    <div class="ai-dot"></div>
+                    <div class="ai-dot"></div>
+                </div>
+                <div class="ai-loading-text">Crunching your lab data…</div>
+            </div>
 
-.lb-calc-bar-wrap { height: 6px; background: #f0f3f8; border-radius: 4px; overflow: hidden; }
-.lb-calc-bar { height: 100%; border-radius: 4px; width: 0; transition: width .6s cubic-bezier(.4,0,.2,1); }
+            <!-- Result state -->
+            <div id="aiResultState" style="display:none">
+                <div id="aiResultContent"></div>
+                <button class="ai-refresh-btn" id="aiRefreshBtn">↻ &nbsp;Re-analyze</button>
+            </div>
 
-.lb-calc-sum {
-    background: #f8faff; border: 1px solid #e0e7ff; border-radius: 10px;
-    padding: 12px 16px; margin-top: 4px;
-}
-.lb-sum-row { display: flex; align-items: center; justify-content: space-between; }
-.lb-sum-eq  { font-size: 0.9rem; color: #64748b; }
-.lb-sum-op  { color: #94a3b8; margin: 0 4px; }
-.lb-sum-total {
-    font-size: 1.5rem; font-weight: 900; color: #1a2744;
-    background: linear-gradient(135deg, #1a2744, #3b5bdb);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-
-.lb-modal-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-}
-.lb-modal-stat {
-    text-align: center; padding: 16px 8px; border-right: 1px solid #f0f3f8;
-}
-.lb-modal-stat:last-child { border-right: none; }
-.lb-modal-stat-num { font-size: 1.3rem; font-weight: 800; color: #1a2744; }
-.lb-modal-stat-lbl {
-    font-size: 0.62rem; font-weight: 600; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: .4px; margin-top: 2px;
-}
-</style>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-document.querySelectorAll('.taskrate-fill').forEach(function(el) {
-    el.style.width = (el.dataset.rate || 0) + '%';
-});
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+
+<style>
+/* ── Robot FAB ───────────────────────────────────────────── */
+.ai-fab {
+    position: fixed; bottom: 32px; right: 32px; z-index: 1000;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    background: linear-gradient(145deg, #1a2744, #243460);
+    border: 2px solid #3b5bdb; border-radius: 20px;
+    padding: 14px 16px 11px; cursor: pointer;
+    box-shadow: 0 8px 32px rgba(26,39,68,.5);
+    transition: transform .2s ease, box-shadow .2s ease;
+    animation: fabPulse 2.8s ease-in-out infinite;
+}
+.ai-fab:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 18px 50px rgba(26,39,68,.6), 0 0 0 8px rgba(59,91,219,.12);
+    animation: none;
+}
+@keyframes fabPulse {
+    0%,100% { box-shadow: 0 8px 32px rgba(26,39,68,.5), 0 0 0 0 rgba(59,91,219,.45); }
+    50%      { box-shadow: 0 8px 32px rgba(26,39,68,.5), 0 0 0 10px rgba(59,91,219,.0); }
+}
+.ai-fab-robot { width: 54px; height: 54px; }
+.ai-fab-robot svg { width: 100%; height: 100%; filter: drop-shadow(0 0 7px rgba(59,91,219,.55)); }
+/* Glowing eye animation */
+.robot-eye { animation: eyeGlow 2s ease-in-out infinite alternate; }
+@keyframes eyeGlow {
+    from { fill: #93c5fd; }
+    to   { fill: #bfdbfe; filter: drop-shadow(0 0 3px #3b5bdb); }
+}
+.ai-fab-label {
+    font-size: 0.68rem; font-weight: 800; color: #F5A623;
+    letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+/* Green online dot */
+.ai-fab-dot {
+    position: absolute; top: -5px; right: -5px;
+    width: 15px; height: 15px; background: #10b981;
+    border-radius: 50%; border: 2.5px solid #fff;
+    animation: dotBlink 2s ease-in-out infinite;
+}
+@keyframes dotBlink {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .7; transform: scale(1.15); }
+}
+
+/* ── Overlay & Panel ─────────────────────────────────────── */
+.ai-panel-overlay {
+    display: none; position: fixed; inset: 0; z-index: 2000;
+    background: rgba(8,12,30,.5); backdrop-filter: blur(5px);
+    align-items: flex-end; justify-content: flex-end; padding: 24px;
+}
+.ai-panel-overlay.open { display: flex; }
+.ai-panel {
+    width: 430px; max-width: 95vw; max-height: 88vh;
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 28px 90px rgba(8,12,30,.35);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: panelUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes panelUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Header */
+.ai-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; background: linear-gradient(135deg, #1a2744, #243460);
+    flex-shrink: 0;
+}
+.ai-panel-header-left { display: flex; align-items: center; gap: 12px; }
+.ai-panel-avatar {
+    width: 48px; height: 48px; background: rgba(59,91,219,.2);
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid rgba(59,91,219,.4); flex-shrink: 0;
+}
+.ai-panel-title { font-size: 0.92rem; font-weight: 800; color: #fff; }
+.ai-panel-sub   { font-size: 0.68rem; color: rgba(255,255,255,.45); margin-top: 2px; }
+.ai-panel-close {
+    width: 32px; height: 32px; background: rgba(255,255,255,.1); border: none;
+    border-radius: 8px; color: #fff; font-size: 1.25rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.ai-panel-close:hover { background: rgba(255,255,255,.22); }
+
+/* Body */
+.ai-panel-body { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* Idle */
+#aiIdleState { text-align: center; padding: 8px 0; }
+.ai-idle-icon  { font-size: 3.2rem; margin-bottom: 14px; }
+.ai-idle-title { font-size: 1rem; font-weight: 800; color: #1a2744; margin-bottom: 8px; }
+.ai-idle-desc  { font-size: 0.8rem; color: #64748b; line-height: 1.65; margin-bottom: 26px; }
+.ai-analyze-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 30px; background: linear-gradient(135deg, #1a2744, #3b5bdb);
+    color: #fff; border: none; border-radius: 12px;
+    font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(59,91,219,.35);
+    transition: transform .15s, box-shadow .15s;
+}
+.ai-analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(59,91,219,.45); }
+
+/* Loading */
+#aiLoadingState { text-align: center; padding: 44px 0; }
+.ai-think-dots  { display: flex; justify-content: center; gap: 9px; margin-bottom: 20px; }
+.ai-dot {
+    width: 13px; height: 13px; border-radius: 50%; background: #3b5bdb;
+    animation: dotBounce 1.2s ease-in-out infinite;
+}
+.ai-dot:nth-child(2) { animation-delay: .2s; background: #F5A623; }
+.ai-dot:nth-child(3) { animation-delay: .4s; background: #10b981; }
+@keyframes dotBounce {
+    0%,80%,100% { transform: scale(.75); opacity: .5; }
+    40%          { transform: scale(1.25); opacity: 1; }
+}
+.ai-loading-text { font-size: 0.84rem; font-weight: 600; color: #64748b; }
+
+/* Result cards */
+#aiResultContent .rec-card {
+    background: #f8faff; border: 1px solid #e0e7ff;
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+}
+#aiResultContent .rec-card-title {
+    font-size: 0.78rem; font-weight: 800; color: #1a2744;
+    text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+}
+#aiResultContent .rec-badge {
+    display: inline-block; padding: 2px 11px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700; margin-bottom: 6px;
+}
+.badge-green  { background: #d1fae5; color: #065f46; }
+.badge-blue   { background: #dbeafe; color: #1e40af; }
+.badge-amber  { background: #fef3c7; color: #92400e; }
+.badge-red    { background: #fee2e2; color: #991b1b; }
+.badge-purple { background: #ede9fe; color: #5b21b6; }
+#aiResultContent .rec-body {
+    font-size: 0.8rem; color: #4b5563; line-height: 1.65;
+}
+#aiResultContent .rec-tip {
+    background: linear-gradient(135deg,#eff6ff,#f0fdf4);
+    border-left: 3px solid #3b5bdb; border-radius: 0 8px 8px 0;
+    padding: 10px 14px; margin-top: 10px;
+    font-size: 0.78rem; color: #374151; font-style: italic;
+}
+.ai-refresh-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin: 14px auto 0; padding: 8px 22px;
+    background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 8px; font-size: 0.78rem; font-weight: 700;
+    color: #64748b; cursor: pointer; transition: background .15s;
+}
+.ai-refresh-btn:hover { background: #e2e8f0; }
+
+@media print { .ai-fab, .ai-panel-overlay { display: none !important; } }
+</style>
+
+<script>
+(function () {
+
+    /* ── Elements ─────────────────────────────────────────── */
+    const fab         = document.getElementById('aiFab');
+    const overlay     = document.getElementById('aiOverlay');
+    const closeBtn    = document.getElementById('aiPanelClose');
+    const analyzeBtn  = document.getElementById('aiAnalyzeBtn');
+    const refreshBtn  = document.getElementById('aiRefreshBtn');
+    const idleState   = document.getElementById('aiIdleState');
+    const loadState   = document.getElementById('aiLoadingState');
+    const resultState = document.getElementById('aiResultState');
+    const resultEl    = document.getElementById('aiResultContent');
+
+    /* ── Open / Close ─────────────────────────────────────── */
+    fab.addEventListener('click', () => overlay.classList.add('open'));
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    function close() { overlay.classList.remove('open'); }
+
+    refreshBtn.addEventListener('click', () => {
+        resultState.style.display = 'none';
+        idleState.style.display   = 'block';
+    });
+
+    analyzeBtn.addEventListener('click', analyze);
+
+    /* ── Core logic (pure JS, no API) ────────────────────── */
+    function analyze() {
+        idleState.style.display   = 'none';
+        loadState.style.display   = 'block';
+        resultState.style.display = 'none';
+
+        // Small delay so the loading animation is visible
+        setTimeout(() => {
+            const rec = computeRecommendations();
+            renderResult(rec);
+        }, 900);
+    }
+
+    function computeRecommendations() {
+        const chartDataEl = document.getElementById('chartData');
+        let labVisits = [], purposePerLab = [];
+        try {
+            const parsed  = JSON.parse(chartDataEl.textContent);
+            labVisits     = parsed.lab_visits      || [];
+            purposePerLab = parsed.purpose_per_lab || [];
+        } catch(e) {}
+
+        /* ── No data at all ── */
+        if (!labVisits.length) {
+            return {
+                noData: true,
+                message: 'No sit-in records found yet. Recommendations will appear once students start logging sessions.'
+            };
+        }
+
+        const totalSessions = labVisits.reduce((s, l) => s + l.total_visits, 0);
+        const totalHours    = labVisits.reduce((s, l) => s + l.total_minutes, 0) / 60;
+        const avgSessions   = totalSessions / labVisits.length;
+
+        /* ── Best lab — least congested (fewest sessions) ── */
+        const sorted = [...labVisits].sort((a, b) => a.total_visits - b.total_visits);
+        const bestLab   = sorted[0];
+        const busyLab   = sorted[sorted.length - 1];
+
+        /* ── Best avg session duration ── */
+        const withTime = labVisits.filter(l => l.total_visits > 0)
+            .map(l => ({ ...l, avgMin: l.total_minutes / l.total_visits }))
+            .sort((a, b) => b.avgMin - a.avgMin);
+        const longestLab = withTime[0] || bestLab;
+
+        /* ── Purpose-to-lab map ── */
+        const purposeMap = {};
+        purposePerLab.forEach(p => {
+            if (!purposeMap[p.purpose]) purposeMap[p.purpose] = [];
+            purposeMap[p.purpose].push({ lab: p.labRoom, cnt: p.cnt });
+        });
+        // For each purpose find which lab has the most sessions
+        const purposeRecs = Object.entries(purposeMap).map(([purpose, labs]) => {
+            const top = labs.sort((a, b) => b.cnt - a.cnt)[0];
+            return { purpose, lab: top.lab, cnt: top.cnt };
+        }).sort((a, b) => b.cnt - a.cnt);
+
+        /* ── Top purpose overall ── */
+        const purposeTotals = {};
+        purposePerLab.forEach(p => {
+            purposeTotals[p.purpose] = (purposeTotals[p.purpose] || 0) + p.cnt;
+        });
+        const topPurpose = Object.entries(purposeTotals).sort((a, b) => b[1] - a[1])[0];
+
+        /* ── Congestion level ── */
+        const busyRatio = busyLab.total_visits / avgSessions;
+        let congestionLabel, congestionClass;
+        if (busyRatio > 2)      { congestionLabel = 'High';   congestionClass = 'badge-red'; }
+        else if (busyRatio > 1.4){ congestionLabel = 'Medium'; congestionClass = 'badge-amber'; }
+        else                     { congestionLabel = 'Low';    congestionClass = 'badge-green'; }
+
+        return {
+            noData: false,
+            totalSessions, totalHours: totalHours.toFixed(1),
+            labCount: labVisits.length,
+            bestLab, busyLab, longestLab,
+            purposeRecs, topPurpose,
+            congestionLabel, congestionClass,
+            avgSessions: Math.round(avgSessions),
+        };
+    }
+
+    function renderResult(rec) {
+        loadState.style.display   = 'none';
+        resultState.style.display = 'block';
+
+        if (rec.noData) {
+            resultEl.innerHTML = `
+            <div class="rec-card">
+                <div class="rec-card-title">📭 No Data Yet</div>
+                <div class="rec-body">${rec.message}</div>
+            </div>`;
+            return;
+        }
+
+        const { bestLab, busyLab, longestLab, purposeRecs, topPurpose,
+                totalSessions, totalHours, congestionLabel, congestionClass, avgSessions } = rec;
+
+        /* Purpose-to-lab rows */
+        const purposeRows = purposeRecs.slice(0, 3).map(p =>
+            `<div style="display:flex;align-items:center;justify-content:space-between;
+                         font-size:0.78rem;padding:4px 0;border-bottom:1px solid #e0e7ff;">
+                <span style="color:#374151;font-weight:600;">${p.purpose}</span>
+                <span class="rec-badge badge-blue" style="margin:0;">Lab ${p.lab} · ${p.cnt} sessions</span>
+             </div>`
+        ).join('');
+
+        resultEl.innerHTML = `
+
+        <div class="rec-card">
+            <div class="rec-card-title">🏆 Best Lab to Sit In</div>
+            <span class="rec-badge badge-green">Lab ${bestLab.labRoom}</span>
+            <div class="rec-body">
+                Lab ${bestLab.labRoom} has the <strong>fewest sessions (${bestLab.total_visits})</strong>
+                compared to the system average of ${avgSessions} sessions per lab —
+                meaning it's likely to be the least crowded and easiest to find a free PC.
+            </div>
+        </div>
+
+        <div class="rec-card">
+            <div class="rec-card-title">⚠️ Busiest Lab (Expect Crowds)</div>
+            <span class="rec-badge badge-red">Lab ${busyLab.labRoom}</span>
+            <div class="rec-body">
+                Lab ${busyLab.labRoom} is the most used with
+                <strong>${busyLab.total_visits} sessions</strong> recorded.
+                Overall congestion is rated <span class="rec-badge ${congestionClass}" style="margin:0 2px;">${congestionLabel}</span>.
+                Consider reserving a slot in advance if you need this lab.
+            </div>
+        </div>
+
+        <div class="rec-card">
+            <div class="rec-card-title">⏱ Longest Average Session</div>
+            <span class="rec-badge badge-purple">Lab ${longestLab.labRoom}</span>
+            <div class="rec-body">
+                Students tend to stay the longest in Lab ${longestLab.labRoom}
+                (avg <strong>${Math.round(longestLab.avgMin)} min per session</strong>).
+                This suggests it's well-suited for extended work sessions or complex tasks.
+            </div>
+        </div>
+
+        ${purposeRecs.length ? `
+        <div class="rec-card">
+            <div class="rec-card-title">🎯 Best Lab by Purpose</div>
+            <div class="rec-body" style="margin-bottom:8px;">
+                Top lab for each purpose based on recorded sessions:
+            </div>
+            ${purposeRows}
+            ${topPurpose ? `<div class="rec-tip">💡 The most common reason students sit in is <strong>${topPurpose[0]}</strong> (${topPurpose[1]} sessions total).</div>` : ''}
+        </div>` : ''}
+
+        <div class="rec-card">
+            <div class="rec-card-title">📊 Overall Summary</div>
+            <div class="rec-body">
+                Across <strong>${rec.labCount} active lab${rec.labCount !== 1 ? 's' : ''}</strong>,
+                students have logged <strong>${totalSessions} sit-in sessions</strong>
+                totaling <strong>${totalHours} hours</strong>.
+                For the best experience, aim for Lab ${bestLab.labRoom} during peak hours
+                and reserve in advance for Lab ${busyLab.labRoom}.
+            </div>
+        </div>`;
+    }
+
+})();
+</script>
 {% endblock %}

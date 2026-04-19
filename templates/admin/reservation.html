@@ -4,6 +4,16 @@
 
 {% block extra_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/admin_reservation.css') }}">
+<style>
+/* ── Already-active warning badge in the action cell ── */
+.status-sitin-warn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.74rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+    background: #fffbeb; color: #92400e;
+    border: 1.5px solid #fcd34d;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -155,15 +165,29 @@
                                         <i class="fa-solid fa-xmark"></i> Reject
                                     </button>
                                 </div>
+
                                 {% elif r['status'] == 'Approved' %}
+
+                                    {# Case 1: This reservation's own sit-in is active #}
                                     {% if r['sitInId'] and r['sitInStatus'] == 'Active' %}
                                         <span class="status-sitin-active">
                                             <i class="fa-solid fa-desktop"></i> Currently Sitting In
                                         </span>
+
+                                    {# Case 2: This reservation's own sit-in is done #}
                                     {% elif r['sitInId'] and r['sitInStatus'] == 'Done' %}
                                         <span class="action-done" style="font-size:0.76rem;color:#10b981;">
                                             <i class="fa-solid fa-circle-check"></i> Session Ended
                                         </span>
+
+                                    {# Case 3: Student has a DIFFERENT active sit-in (e.g. direct sit-in) #}
+                                    {% elif r['studentId'] in active_student_ids %}
+                                        <span class="status-sitin-warn"
+                                              title="This student is already in an active sit-in session. Log them out first.">
+                                            <i class="fa-solid fa-triangle-exclamation"></i> Already In Session
+                                        </span>
+
+                                    {# Case 4: Ready to sit in #}
                                     {% else %}
                                         <form method="POST"
                                             action="{{ url_for('admin_reservation_sitin', resv_id=r['id']) }}"
@@ -173,6 +197,7 @@
                                             </button>
                                         </form>
                                     {% endif %}
+
                                 {% else %}
                                     <span class="action-done">—</span>
                                 {% endif %}
@@ -325,7 +350,7 @@
     </div>
 </div>
 
-<!-- ── Add Schedule Modal (UPDATED: slot picker instead of time inputs) ── -->
+<!-- ── Add Schedule Modal ── -->
 <div class="modal-backdrop" id="scheduleModalBackdrop">
     <div class="modal schedule-modal">
         <div class="modal-title">
@@ -349,7 +374,6 @@
                 </div>
             </div>
 
-            <!-- Time Slot Picker — same slots students see -->
             <div class="form-group" style="margin-bottom:6px;">
                 <label style="display:flex;align-items:center;gap:6px;">
                     <i class="fa-regular fa-clock" style="color:#1a2744;"></i>
@@ -373,7 +397,6 @@
                     </button>
                     {% endfor %}
                 </div>
-                <!-- Hidden input that JS populates -->
                 <input type="hidden" name="timeSlot" id="schedTimeSlotInput" required>
                 <div class="sched-slot-error" id="schedSlotError" style="display:none;">
                     Please select a time slot.
@@ -481,7 +504,6 @@ function setReason(txt)     { document.getElementById('rejectReasonInput').value
 
 // ── Schedule Modal ────────────────────────────────────────────────────────────
 function openScheduleModal() {
-    // Reset slot selection when opening
     document.querySelectorAll('.sched-slot-btn').forEach(function(b) { b.classList.remove('selected'); });
     document.getElementById('schedTimeSlotInput').value = '';
     document.getElementById('schedSlotError').style.display = 'none';
@@ -489,7 +511,6 @@ function openScheduleModal() {
 }
 function closeScheduleModal() { document.getElementById('scheduleModalBackdrop').classList.remove('open'); }
 
-// Slot picker buttons
 document.querySelectorAll('.sched-slot-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.sched-slot-btn').forEach(function(b) { b.classList.remove('selected'); });
@@ -499,7 +520,6 @@ document.querySelectorAll('.sched-slot-btn').forEach(function(btn) {
     });
 });
 
-// Validate slot is selected before submit
 document.getElementById('scheduleForm')?.addEventListener('submit', function(e) {
     if (!document.getElementById('schedTimeSlotInput').value) {
         e.preventDefault();

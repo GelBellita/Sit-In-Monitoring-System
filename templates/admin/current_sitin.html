@@ -24,11 +24,25 @@
 .logout-modal-header {
     background: #1a2744; padding: 18px 22px;
     display: flex; align-items: center; gap: 12px;
+    transition: background .3s;
+}
+.logout-modal-header.expired-header {
+    background: linear-gradient(135deg, #7f1d1d, #991b1b);
 }
 .logout-modal-header i { font-size: 1.3rem; color: #F5A623; }
+.logout-modal-header.expired-header i { color: #fca5a5; }
 .logout-modal-title { font-size: 1rem; font-weight: 700; color: #fff; }
 .logout-modal-sub   { font-size: 0.75rem; color: rgba(255,255,255,.5); margin-top: 2px; }
 .logout-modal-body  { padding: 22px 24px; }
+
+.expired-notice {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff5f5; border: 1.5px solid #fca5a5;
+    border-radius: 9px; padding: 10px 14px; margin-bottom: 18px;
+    font-size: 0.82rem; color: #991b1b; font-weight: 600;
+}
+.expired-notice i { color: #ef4444; font-size: 1rem; flex-shrink: 0; }
+
 .logout-student-info {
     display: flex; align-items: center; gap: 12px;
     background: #f0f4f8; border-radius: 9px; padding: 12px 14px;
@@ -39,8 +53,10 @@
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 0.9rem; font-weight: 800; flex-shrink: 0;
 }
+.logout-avatar.expired-avatar { background: #7f1d1d; color: #fca5a5; }
 .logout-student-name { font-weight: 700; font-size: 0.9rem; color: #1a2744; }
 .logout-student-meta { font-size: 0.73rem; color: #94a3b8; margin-top: 2px; }
+
 .rating-section { margin-bottom: 18px; }
 .rating-section-label {
     font-size: 0.78rem; font-weight: 700; color: #64748b;
@@ -72,6 +88,7 @@
     font-size: 0.82rem; color: #64748b;
 }
 .rating-score-display strong { color: #1a2744; font-size: 1rem; }
+
 .task-section { border-top: 1px solid #f0f3f8; padding-top: 16px; margin-bottom: 16px; }
 .task-section-label {
     font-size: 0.78rem; font-weight: 700; color: #64748b;
@@ -88,6 +105,7 @@
 .task-btn.yes.active { border-color: #10b981; background: #f0fdf4; color: #065f46; }
 .task-btn.no.active  { border-color: #ef4444; background: #fff5f5; color: #991b1b; }
 .task-btn:not(.active):hover { border-color: #cbd5e1; background: #f8fafc; }
+
 .logout-modal-footer {
     display: flex; gap: 10px; justify-content: flex-end;
     padding: 0 24px 20px;
@@ -105,7 +123,11 @@
     transition: background .15s;
 }
 .btn-confirm-logout:hover { background: #243460; }
-/* PC number badge */
+.btn-confirm-logout.expired-confirm {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+.btn-confirm-logout.expired-confirm:hover { opacity: .9; }
+
 .pc-num-pill {
     display: inline-flex; align-items: center; gap: 4px;
     background: #eff6ff; border: 1.5px solid #93c5fd;
@@ -113,6 +135,48 @@
     padding: 2px 9px; border-radius: 20px; white-space: nowrap;
 }
 .pc-num-pill i { font-size: 0.65rem; }
+
+.remaining-time {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.8rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+    white-space: nowrap;
+}
+.remaining-time.time-ok      { background: #f0fdf4; color: #065f46; border: 1.5px solid #6ee7b7; }
+.remaining-time.time-warn    { background: #fffbeb; color: #92400e; border: 1.5px solid #fcd34d; }
+.remaining-time.time-danger  { background: #fff5f5; color: #991b1b; border: 1.5px solid #fca5a5;
+                                animation: pulse-danger .8s ease-in-out infinite; }
+.remaining-time.time-expired { background: #fee2e2; color: #7f1d1d; border: 1.5px solid #ef4444; }
+@keyframes pulse-danger {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .6; }
+}
+
+tr.row-expired       { background: #fff8f8 !important; }
+tr.row-expired:hover { background: #fff0f0 !important; }
+
+.btn-logout-active {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border: none; border-radius: 8px;
+    background: #1a2744; color: #fff;
+    font-size: 0.76rem; font-weight: 700;
+    cursor: pointer; transition: background .15s; white-space: nowrap;
+}
+.btn-logout-active:hover { background: #2d4a8a; }
+
+.btn-rate-close {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border: none; border-radius: 8px;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff; font-size: 0.76rem; font-weight: 700;
+    cursor: pointer; transition: opacity .15s; white-space: nowrap;
+}
+.btn-rate-close:hover { opacity: .85; }
+
+.action-cell {
+    display: flex; flex-direction: column;
+    align-items: flex-start; gap: 5px;
+}
 </style>
 {% endblock %}
 
@@ -123,7 +187,9 @@
         <div class="card-header">
             <span class="live-dot"></span>
             Currently Active Sit-In Sessions
-            <span style="margin-left:auto;background:rgba(255,255,255,.15);padding:3px 12px;border-radius:20px;font-size:0.78rem;">
+            <span id="activeCount"
+                  style="margin-left:auto;background:rgba(255,255,255,.15);
+                         padding:3px 12px;border-radius:20px;font-size:0.78rem;">
                 {{ records|length }} active
             </span>
         </div>
@@ -140,14 +206,16 @@
                             <th>Lab Room</th>
                             <th>PC</th>
                             <th>Purpose</th>
-                            <th>Time In</th>
+                            <th>Remaining Time</th>
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="sitin-tbody">
                         {% for r in records %}
-                        <tr>
-                            <td style="color:#a0aec0;font-weight:700;text-align:center">{{ loop.index }}</td>
+                        <tr id="row-{{ r['id'] }}">
+                            <td style="color:#a0aec0;font-weight:700;text-align:center">
+                                {{ loop.index }}
+                            </td>
                             <td><strong>{{ r['lastName'] }}, {{ r['firstName'] }}</strong></td>
                             <td><span class="student-id">{{ r['studentId'] }}</span></td>
                             <td><span class="purpose-pill">Lab {{ r['labRoom'] }}</span></td>
@@ -161,18 +229,29 @@
                                 {% endif %}
                             </td>
                             <td><span class="purpose-pill">{{ r['purpose'] or '—' }}</span></td>
-                            <td class="timein-cell">
-                                <span class="live-dot-sm"></span>
-                                {{ r['timeIn'] }}
-                            </td>
+
+                            <!-- Remaining Time — data-timein is UTC from SQLite -->
                             <td>
-                                <button class="btn btn-danger btn-sm logout-btn"
-                                    data-sit-id="{{ r['id'] }}"
-                                    data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
-                                    data-student-id="{{ r['studentId'] }}"
-                                    data-lab="Lab {{ r['labRoom'] }}">
-                                    <i class="fa-solid fa-right-from-bracket"></i> Log Out
-                                </button>
+                                <span class="remaining-time time-ok"
+                                      id="timer-{{ r['id'] }}"
+                                      data-sit-id="{{ r['id'] }}"
+                                      data-timein="{{ r['timeIn'] }}">
+                                    <i class="fa-solid fa-clock"></i>
+                                    <span class="timer-text">—</span>
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="action-cell" id="actions-{{ r['id'] }}">
+                                    <button class="btn-logout-active logout-btn"
+                                        id="logout-btn-{{ r['id'] }}"
+                                        data-sit-id="{{ r['id'] }}"
+                                        data-name="{{ r['firstName'] }} {{ r['lastName'] }}"
+                                        data-student-id="{{ r['studentId'] }}"
+                                        data-lab="Lab {{ r['labRoom'] }}">
+                                        <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -193,11 +272,12 @@
 <!-- ── Logout + Rate Modal ── -->
 <div class="logout-modal-backdrop" id="logoutModalBackdrop">
     <div class="logout-modal">
-        <div class="logout-modal-header">
-            <i class="fa-solid fa-right-from-bracket"></i>
+
+        <div class="logout-modal-header" id="logoutModalHeader">
+            <i class="fa-solid fa-right-from-bracket" id="logoutModalIcon"></i>
             <div>
-                <div class="logout-modal-title">Log Out Student</div>
-                <div class="logout-modal-sub" id="logoutModalSub">Rate before ending session</div>
+                <div class="logout-modal-title" id="logoutModalTitle">Log Out Student</div>
+                <div class="logout-modal-sub"   id="logoutModalSub">Rate before ending session</div>
             </div>
         </div>
 
@@ -206,6 +286,12 @@
             <input type="hidden" name="taskCompleted" id="logoutTaskCompleted" value="0">
 
             <div class="logout-modal-body">
+
+                <div class="expired-notice" id="expiredNotice" style="display:none">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>This student's 2-hour session has expired. Rate their behavior and close the session.</span>
+                </div>
+
                 <div class="logout-student-info">
                     <div class="logout-avatar" id="logoutAvatarInitials">?</div>
                     <div>
@@ -241,7 +327,9 @@
                     </div>
                     <div class="rating-score-display">
                         Admin rating: <strong id="ratingScoreText">0</strong> / 3 pts
-                        <span style="color:#94a3b8;font-size:0.72rem;margin-left:6px;">(every 3 pts = 1 leaderboard point)</span>
+                        <span style="color:#94a3b8;font-size:0.72rem;margin-left:6px;">
+                            (every 3 pts = 1 leaderboard point)
+                        </span>
                     </div>
                 </div>
 
@@ -262,40 +350,143 @@
             </div>
 
             <div class="logout-modal-footer">
-                <button type="button" class="btn-cancel-logout" onclick="closeLogoutModal()">Cancel</button>
-                <button type="submit" class="btn-confirm-logout">
+                <button type="button" class="btn-cancel-logout" onclick="closeLogoutModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-confirm-logout" id="confirmLogoutBtn">
                     <i class="fa-solid fa-right-from-bracket"></i> Confirm Log Out
                 </button>
             </div>
         </form>
+
     </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-document.querySelectorAll('.logout-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        openLogoutModal(
-            this.dataset.sitId,
-            this.dataset.name,
-            this.dataset.studentId,
-            this.dataset.lab
-        );
-    });
-});
+// ── Config ────────────────────────────────────────────────────────────────────
+const SESSION_LIMIT_MS = 2 * 60 * 60 * 1000;   // 2 hours in ms
+const expiredSet       = new Set();
 
-function openLogoutModal(sitId, name, studentId, lab) {
+// ── Parse a SQLite DATETIME string as UTC ─────────────────────────────────────
+// SQLite stores CURRENT_TIMESTAMP in UTC (e.g. "2026-04-18 10:30:00").
+// Without a timezone suffix, JS Date() treats it as LOCAL time — which would
+// make a timestamp that is actually 10:30 UTC appear as 10:30 local, causing
+// an 8-hour error in UTC+8 (Philippines). Appending "Z" forces UTC parsing.
+function parseUTCTimestamp(ts) {
+    if (!ts) return NaN;
+    // Replace space with T and append Z so it's treated as UTC
+    return new Date(ts.replace(' ', 'T') + 'Z').getTime();
+}
+
+// ── Timer helpers ─────────────────────────────────────────────────────────────
+function formatRemaining(ms) {
+    if (ms <= 0) return { text: 'Expired', cls: 'time-expired' };
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const text = h > 0
+        ? `${h}h ${String(m).padStart(2,'0')}m`
+        : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    let cls = 'time-ok';
+    if      (ms < 10 * 60 * 1000) cls = 'time-danger';
+    else if (ms < 30 * 60 * 1000) cls = 'time-warn';
+    return { text, cls };
+}
+
+// ── Mark a session as expired ─────────────────────────────────────────────────
+function markExpired(sitId) {
+    if (expiredSet.has(sitId)) return;
+    expiredSet.add(sitId);
+
+    const row = document.getElementById('row-' + sitId);
+    if (row) row.classList.add('row-expired');
+
+    const timerEl = document.getElementById('timer-' + sitId);
+    if (timerEl) {
+        timerEl.className = 'remaining-time time-expired';
+        timerEl.querySelector('.timer-text').textContent = 'Expired';
+    }
+
+    const actionsDiv = document.getElementById('actions-' + sitId);
+    const logoutBtn  = document.getElementById('logout-btn-' + sitId);
+    if (!actionsDiv) return;
+
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (actionsDiv.querySelector('.btn-rate-close')) return;
+
+    const rateBtn = document.createElement('button');
+    rateBtn.className = 'btn-rate-close';
+    rateBtn.innerHTML = '<i class="fa-solid fa-star"></i> Rate &amp; Close';
+    rateBtn.addEventListener('click', function () {
+        const name      = logoutBtn ? logoutBtn.dataset.name      : '';
+        const studentId = logoutBtn ? logoutBtn.dataset.studentId : '';
+        const lab       = logoutBtn ? logoutBtn.dataset.lab       : '';
+        openLogoutModal(sitId, name, studentId, lab, true);
+    });
+    actionsDiv.appendChild(rateBtn);
+}
+
+// ── Tick every second ─────────────────────────────────────────────────────────
+function tickTimers() {
+    const now = Date.now();   // current time in ms (local, but that's fine — we compare deltas)
+    document.querySelectorAll('.remaining-time[data-timein]').forEach(function (el) {
+        const sitId    = el.dataset.sitId;
+        const timeInMs = parseUTCTimestamp(el.dataset.timein);
+
+        if (isNaN(timeInMs)) return;   // bad timestamp — skip
+
+        const elapsed   = now - timeInMs;           // how long since they sat in (ms)
+        const remaining = SESSION_LIMIT_MS - elapsed;
+
+        if (remaining <= 0) {
+            markExpired(sitId);
+        } else {
+            const { text, cls } = formatRemaining(remaining);
+            el.querySelector('.timer-text').textContent = text;
+            el.className = 'remaining-time ' + cls;
+        }
+    });
+}
+
+tickTimers();
+setInterval(tickTimers, 1000);
+
+// ── Modal open/close ──────────────────────────────────────────────────────────
+function openLogoutModal(sitId, name, studentId, lab, isExpired) {
+    isExpired = !!isExpired;
+
     document.getElementById('logoutForm').action = '/admin/logout-sitin/' + sitId;
+
+    document.getElementById('logoutModalHeader').className =
+        'logout-modal-header' + (isExpired ? ' expired-header' : '');
+    document.getElementById('logoutModalTitle').textContent =
+        isExpired ? 'Rate & Close Session' : 'Log Out Student';
     document.getElementById('logoutModalSub').textContent = lab + ' — ' + name;
+
+    document.getElementById('expiredNotice').style.display = isExpired ? 'flex' : 'none';
+
+    const avatar  = document.getElementById('logoutAvatarInitials');
+    avatar.className = 'logout-avatar' + (isExpired ? ' expired-avatar' : '');
+    const parts   = name.trim().split(' ');
+    const initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '');
+    avatar.textContent = initials.toUpperCase();
+
     document.getElementById('logoutStudentName').textContent = name;
     document.getElementById('logoutStudentMeta').textContent = studentId;
 
-    var parts    = name.trim().split(' ');
-    var initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '');
-    document.getElementById('logoutAvatarInitials').textContent = initials.toUpperCase();
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (isExpired) {
+        confirmBtn.className = 'btn-confirm-logout expired-confirm';
+        confirmBtn.innerHTML = '<i class="fa-solid fa-star"></i> Save Rating & Close';
+    } else {
+        confirmBtn.className = 'btn-confirm-logout';
+        confirmBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Confirm Log Out';
+    }
 
-    document.querySelectorAll('.admin-check').forEach(function(cb) {
+    document.querySelectorAll('.admin-check').forEach(function (cb) {
         cb.checked = false;
         cb.closest('.check-item')?.classList.remove('checked');
     });
@@ -309,33 +500,47 @@ function closeLogoutModal() {
     document.getElementById('logoutModalBackdrop').classList.remove('open');
 }
 
-document.querySelectorAll('.admin-check').forEach(function(cb) {
-    cb.addEventListener('change', function() {
+document.querySelectorAll('.logout-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        openLogoutModal(
+            this.dataset.sitId,
+            this.dataset.name,
+            this.dataset.studentId,
+            this.dataset.lab,
+            false
+        );
+    });
+});
+
+document.getElementById('logoutModalBackdrop').addEventListener('click', function (e) {
+    if (e.target === this) closeLogoutModal();
+});
+
+// ── Rating checkboxes ─────────────────────────────────────────────────────────
+document.querySelectorAll('.admin-check').forEach(function (cb) {
+    cb.addEventListener('change', function () {
         this.closest('.check-item')?.classList.toggle('checked', this.checked);
         updateRatingScore();
     });
 });
 
 function updateRatingScore() {
-    var score = 0;
-    document.querySelectorAll('.admin-check').forEach(function(cb) {
+    let score = 0;
+    document.querySelectorAll('.admin-check').forEach(function (cb) {
         if (cb.checked) score += parseInt(cb.value || 1);
     });
-    document.getElementById('logoutAdminRating').value = score;
+    document.getElementById('logoutAdminRating').value     = score;
     document.getElementById('ratingScoreText').textContent = score;
 }
 
+// ── Task toggle ───────────────────────────────────────────────────────────────
 function setTask(val) {
     document.getElementById('logoutTaskCompleted').value = val;
     document.getElementById('taskYesBtn').classList.toggle('active', val === 1);
-    document.getElementById('taskNoBtn').classList.toggle('active', val === 0);
+    document.getElementById('taskNoBtn').classList.toggle('active',  val === 0);
 }
 
-document.getElementById('taskYesBtn').addEventListener('click', function() { setTask(1); });
-document.getElementById('taskNoBtn').addEventListener('click',  function() { setTask(0); });
-
-document.getElementById('logoutModalBackdrop').addEventListener('click', function(e) {
-    if (e.target === this) closeLogoutModal();
-});
+document.getElementById('taskYesBtn').addEventListener('click', function () { setTask(1); });
+document.getElementById('taskNoBtn').addEventListener('click',  function () { setTask(0); });
 </script>
 {% endblock %}

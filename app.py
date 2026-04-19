@@ -6,6 +6,19 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 app.secret_key = "gel119870"
 
+@app.template_filter('to12h')
+def to12h(time_str):
+    """Convert 'HH:MM' (24h) to 'H:MM AM/PM'."""
+    if not time_str:
+        return ''
+    try:
+        h, m = int(time_str[:2]), int(time_str[3:5])
+        period = 'AM' if h < 12 else 'PM'
+        h12 = h % 12 or 12
+        return f"{h12}:{m:02d} {period}"
+    except Exception:
+        return time_str
+
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "images", "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -33,13 +46,41 @@ SLOT_TIMES = {
     "5:00 PM – 7:00 PM":   ("17:00", "19:00"),
 }
 
+# ── Session time limit (2 hours) ──────────────────────────────────────────────
+SESSION_LIMIT_MINUTES = 120
+
+# ── Philippines offset (UTC+8) ────────────────────────────────────────────────
+PH_OFFSET = timedelta(hours=8)
+
+
+def to_ph_time(utc_str):
+    """Convert a SQLite UTC timestamp string to Philippine Time (UTC+8)."""
+    if not utc_str:
+        return None
+    try:
+        dt = datetime.strptime(str(utc_str), "%Y-%m-%d %H:%M:%S")
+        return (dt + PH_OFFSET).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return str(utc_str)
+
+
+def records_to_ph(rows):
+    """Convert a list of sqlite3.Row objects to dicts with PH-adjusted timeIn/timeOut."""
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["timeIn"]  = to_ph_time(d.get("timeIn"))
+        d["timeOut"] = to_ph_time(d.get("timeOut"))
+        result.append(d)
+    return result
+
+
 def slot_overlaps_schedule(slot_label, sched_start, sched_end):
     """Return True if the named time slot overlaps with [sched_start, sched_end] (HH:MM strings)."""
     times = SLOT_TIMES.get(slot_label)
     if not times:
         return False
     s1, e1 = times
-    # overlap iff s1 < sched_end AND e1 > sched_start
     return s1 < sched_end and e1 > sched_start
 
 
@@ -78,19 +119,20 @@ def create_table():
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sit_in_history (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            studentId     TEXT,
-            labRoom       TEXT,
-            purpose       TEXT,
-            pcNumber      INTEGER,
-            timeIn        DATETIME DEFAULT CURRENT_TIMESTAMP,
-            timeOut       DATETIME,
-            status        TEXT DEFAULT 'Active',
-            feedback      TEXT,
-            feedbackRating INTEGER DEFAULT 0,
-            adminRating   INTEGER DEFAULT 0,
-            taskCompleted INTEGER DEFAULT 0,
-            totalMinutes  INTEGER DEFAULT 0,
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            studentId           TEXT,
+            labRoom             TEXT,
+            purpose             TEXT,
+            pcNumber            INTEGER,
+            timeIn              DATETIME DEFAULT CURRENT_TIMESTAMP,
+            timeOut             DATETIME,
+            status              TEXT DEFAULT 'Active',
+            feedback            TEXT,
+            feedbackRating      INTEGER DEFAULT 0,
+            feedbackSubmittedAt DATETIME,
+            adminRating         INTEGER DEFAULT 0,
+            taskCompleted       INTEGER DEFAULT 0,
+            totalMinutes        INTEGER DEFAULT 0,
             FOREIGN KEY (studentId) REFERENCES users(idNumber)
         )
     """)
@@ -165,6 +207,14 @@ def create_table():
         conn.execute("ALTER TABLE sit_in_history ADD COLUMN feedback TEXT")
     if "feedbackRating" not in existing_history:
         conn.execute("ALTER TABLE sit_in_history ADD COLUMN feedbackRating INTEGER DEFAULT 0")
+    if "feedbackSubmittedAt" not in existing_history:
+        conn.execute("ALTER TABLE sit_in_history ADD COLUMN feedbackSubmittedAt DATETIME")
+        # Back-fill existing feedback rows with timeOut as a best-guess submission time
+        conn.execute("""
+            UPDATE sit_in_history
+            SET feedbackSubmittedAt = timeOut
+            WHERE feedback IS NOT NULL AND feedback != '' AND timeOut IS NOT NULL
+        """)
     if "adminRating" not in existing_history:
         conn.execute("ALTER TABLE sit_in_history ADD COLUMN adminRating INTEGER DEFAULT 0")
     if "taskCompleted" not in existing_history:
@@ -176,7 +226,6 @@ def create_table():
         conn.execute("UPDATE sit_in_history SET feedbackSeen = 1 WHERE feedback IS NOT NULL")
     if "pcNumber" not in existing_history:
         conn.execute("ALTER TABLE sit_in_history ADD COLUMN pcNumber INTEGER")
-    
 
     existing_reservations = [r[1] for r in conn.execute("PRAGMA table_info(reservations)").fetchall()]
     if "isNew" not in existing_reservations:
@@ -194,7 +243,6 @@ def create_table():
     existing_schedules = [r[1] for r in conn.execute("PRAGMA table_info(lab_schedules)").fetchall()]
     if "timeSlot" not in existing_schedules:
         conn.execute("ALTER TABLE lab_schedules ADD COLUMN timeSlot TEXT")
-        # Migrate old rows: convert timeStart/timeEnd back to nearest slot label if possible
         if "timeStart" in existing_schedules:
             conn.execute("""
                 UPDATE lab_schedules SET timeSlot = CASE
@@ -263,11 +311,65 @@ def add_notification(user_id, message, notif_type="info"):
     conn.close()
 
 
+# ── Leaderboard helper (shared by home + analytics) ──────────────────────────
+HOURS_PER_SESSION = 2   # expected max hours a student should stay per session
+
+def build_leaderboard(conn, limit=10):
+    leaderboard_raw = conn.execute("""
+        SELECT
+            s.studentId,
+            u.firstName, u.lastName, u.course, u.yearLevel,
+            COUNT(*)                                              AS total_sessions,
+            COALESCE(SUM(s.adminRating),  0)                     AS total_admin_rating,
+            COALESCE(SUM(s.totalMinutes), 0)                     AS total_minutes,
+            SUM(CASE WHEN s.taskCompleted = 1 THEN 1 ELSE 0 END) AS tasks_done
+        FROM sit_in_history s
+        JOIN users u ON s.studentId = u.idNumber
+        GROUP BY s.studentId
+        ORDER BY total_sessions DESC
+    """).fetchall()
+
+    leaderboard = []
+    for r in leaderboard_raw:
+        total_sessions     = int(r["total_sessions"]     or 0)
+        total_admin_rating = int(r["total_admin_rating"] or 0)
+        total_minutes      = int(r["total_minutes"]      or 0)
+        tasks_done         = int(r["tasks_done"]         or 0)
+
+        hours_logged    = total_minutes / 60.0
+        expected_hours  = total_sessions * HOURS_PER_SESSION   # e.g. 5 sessions → 10 hrs max
+        rating_norm     = total_admin_rating / 3.0
+        hours_norm      = min((hours_logged / expected_hours) * 100, 100) if expected_hours > 0 else 0
+        task_norm       = (tasks_done / total_sessions * 100) if total_sessions > 0 else 0
+        composite       = (rating_norm * 0.50) + (hours_norm * 0.30) + (task_norm * 0.20)
+
+        leaderboard.append({
+            "studentId":          r["studentId"],
+            "firstName":          r["firstName"],
+            "lastName":           r["lastName"],
+            "course":             r["course"],
+            "yearLevel":          r["yearLevel"],
+            "total_sessions":     total_sessions,
+            "total_admin_rating": total_admin_rating,
+            "total_minutes":      total_minutes,
+            "tasks_done":         tasks_done,
+            "task_rate":          round(task_norm,   1),
+            "hours_norm":         round(hours_norm,  1),
+            "rating_norm":        round(rating_norm, 2),
+            "composite":          round(composite,   2),
+        })
+
+    leaderboard.sort(key=lambda x: x["composite"], reverse=True)
+    return leaderboard[:limit]
+
+
 # ── Public routes ─────────────────────────────────────────────────────────────
 @app.route("/")
 def landing():
-    return render_template("landing_page/landingPage.html")
-
+    conn        = get_db_connection()
+    leaderboard = build_leaderboard(conn, limit=10)
+    conn.close()
+    return render_template("landing_page/landingPage.html", leaderboard=leaderboard)
 
 @app.route("/landing_page/register", methods=["GET", "POST"])
 def register():
@@ -509,8 +611,12 @@ def submit_feedback(record_id):
     student_name = f"{user['firstName']} {user['lastName']}" if user else session["user_id"]
     lab_room     = record["labRoom"] or "Unknown Lab"
 
+    # ── Record the exact moment the student submitted the feedback ────────────
     conn.execute(
-        "UPDATE sit_in_history SET feedback = ?, feedbackRating = ?, feedbackSeen = 0 WHERE id = ?",
+        """UPDATE sit_in_history
+           SET feedback = ?, feedbackRating = ?, feedbackSeen = 0,
+               feedbackSubmittedAt = CURRENT_TIMESTAMP
+           WHERE id = ?""",
         (feedback, rating, record_id)
     )
     conn.commit()
@@ -518,7 +624,9 @@ def submit_feedback(record_id):
 
     add_notification(
         "ADMIN",
-        f"📝 New feedback from {student_name} for {lab_room} (Rating: {'★' * rating}{'☆' * (5 - rating)}): \"{feedback[:80]}{'...' if len(feedback) > 80 else ''}\"",
+        f"📝 New feedback from {student_name} for {lab_room} "
+        f"(Rating: {'★' * rating}{'☆' * (5 - rating)}): "
+        f"\"{feedback[:80]}{'...' if len(feedback) > 80 else ''}\"",
         "info"
     )
 
@@ -614,7 +722,6 @@ def student_reserve():
 
 @app.route("/student/check-availability")
 def check_availability():
-    # Allow both logged-in students and admin
     if not session.get("user_id") and not session.get("is_admin"):
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -626,7 +733,6 @@ def check_availability():
     conn = get_db_connection()
 
     if qtype == "slots":
-        # Slots blocked by lab schedule with no override PCs
         sched_blocked = []
         sched_rows = conn.execute("""
             SELECT id, timeSlot FROM lab_schedules
@@ -642,7 +748,6 @@ def check_availability():
             if override_count == 0:
                 sched_blocked.append(sched["timeSlot"])
 
-        # Slots fully booked via reservations (all 40 PCs taken)
         resv_rows = conn.execute("""
             SELECT timeSlot, COUNT(DISTINCT pcNumber) as cnt
             FROM reservations
@@ -656,17 +761,12 @@ def check_availability():
         return jsonify({"blocked_slots": blocked})
 
     else:
-        # ── type=pcs ──────────────────────────────────────────────────────────
-
-        # 1. ALL active sit-ins for this lab right now (direct admin sit-ins)
-        #    No date filter — these are LIVE sessions happening right now
         direct_sitin_rows = conn.execute("""
             SELECT pcNumber FROM sit_in_history
             WHERE labRoom = ? AND status = 'Active' AND pcNumber IS NOT NULL
         """, (lab,)).fetchall()
         direct_sitin_pcs = [r["pcNumber"] for r in direct_sitin_rows]
 
-        # 2. Active sit-ins that came FROM an approved reservation for this slot
         resv_sitin_rows = conn.execute("""
             SELECT r.pcNumber
             FROM reservations r
@@ -678,7 +778,6 @@ def check_availability():
 
         all_inuse_pcs = list(set(direct_sitin_pcs + resv_sitin_pcs))
 
-        # 3. Approved reservations not yet sitting in
         reserved_rows = conn.execute("""
             SELECT pcNumber FROM reservations
             WHERE labRoom=? AND reserveDate=? AND timeSlot=?
@@ -687,7 +786,6 @@ def check_availability():
         reserved_pcs = [r["pcNumber"] for r in reserved_rows
                         if r["pcNumber"] not in all_inuse_pcs]
 
-        # 4. Pending reservations
         pending_rows = conn.execute("""
             SELECT pcNumber FROM reservations
             WHERE labRoom=? AND reserveDate=? AND timeSlot=? AND status='Pending'
@@ -696,7 +794,6 @@ def check_availability():
                        if r["pcNumber"] not in all_inuse_pcs
                        and r["pcNumber"] not in reserved_pcs]
 
-        # 5. Schedule-blocked PCs (in-class, minus override PCs)
         sched_rows = conn.execute("""
             SELECT id, timeSlot as schedSlot FROM lab_schedules
             WHERE labRoom = ? AND schedDate = ?
@@ -722,6 +819,7 @@ def check_availability():
             "pending":  pending_pcs,
         })
 
+
 # ── Admin context processor ───────────────────────────────────────────────────
 @app.context_processor
 def inject_admin_notifs():
@@ -739,12 +837,14 @@ def admin_home():
     currently_sitin  = conn.execute("SELECT COUNT(*) FROM sit_in_history WHERE status='Active'").fetchone()[0]
     total_sitin      = conn.execute("SELECT COUNT(*) FROM sit_in_history").fetchone()[0]
     announcements    = conn.execute("SELECT * FROM announcements ORDER BY createdAt DESC").fetchall()
+    leaderboard      = build_leaderboard(conn, limit=10)
     conn.close()
     return render_template("admin/home.html",
                            total_registered=total_registered,
                            currently_sitin=currently_sitin,
                            total_sitin=total_sitin,
-                           announcements=announcements)
+                           announcements=announcements,
+                           leaderboard=leaderboard)
 
 
 @app.route("/admin/announcement", methods=["POST"])
@@ -809,13 +909,14 @@ def admin_search_api():
         "sessions":  student["sessions"] if student["sessions"] is not None else (30 if student["course"] in ('BSIT', 'BSCS') else 20),
     })
 
+
 @app.route("/admin/sitin", methods=["POST"])
 @admin_required
 def admin_sitin():
     student_id = request.form.get("student_id")
     purpose    = request.form.get("purpose")
     lab        = request.form.get("lab")
-    pc_number  = request.form.get("pc_number", "").strip()   # NEW — optional
+    pc_number  = request.form.get("pc_number", "").strip()
 
     conn    = get_db_connection()
     student = conn.execute("SELECT * FROM users WHERE idNumber = ?", (student_id,)).fetchone()
@@ -830,7 +931,6 @@ def admin_sitin():
         conn.close()
         return redirect(url_for("admin_home"))
 
-    # Store pcNumber if provided
     pc_val = int(pc_number) if pc_number.isdigit() else None
 
     conn.execute(
@@ -847,6 +947,7 @@ def admin_sitin():
         "success"
     )
     return redirect(url_for("admin_home"))
+
 
 @app.route("/admin/students")
 @admin_required
@@ -950,6 +1051,8 @@ def admin_add_student():
 @admin_required
 def admin_current_sitin():
     conn    = get_db_connection()
+    # NOTE: timeIn is intentionally kept as raw UTC here because the JS timer
+    # in current_sitin.html appends 'Z' and parses it as UTC itself.
     records = conn.execute("""
         SELECT s.*, u.firstName, u.lastName
         FROM sit_in_history s
@@ -985,8 +1088,9 @@ def admin_logout_sitin(sit_id):
         time_in = record["timeIn"]
         try:
             dt_in      = datetime.strptime(time_in, "%Y-%m-%d %H:%M:%S")
-            dt_out     = datetime.now()
+            dt_out     = datetime.utcnow()
             total_mins = int((dt_out - dt_in).total_seconds() / 60)
+            total_mins = min(total_mins, SESSION_LIMIT_MINUTES)
         except Exception:
             total_mins = 0
 
@@ -1010,7 +1114,7 @@ def admin_logout_sitin(sit_id):
 @admin_required
 def admin_sitin_records():
     conn = get_db_connection()
-    records = conn.execute("""
+    raw_records = conn.execute("""
         SELECT s.*, u.firstName, u.lastName, u.course, u.yearLevel
         FROM sit_in_history s
         JOIN users u ON s.studentId = u.idNumber
@@ -1026,6 +1130,10 @@ def admin_sitin_records():
         LIMIT 5
     """).fetchall()
     conn.close()
+
+    # ── Convert UTC timestamps to Philippine Time (UTC+8) for display ──
+    records = records_to_ph(raw_records)
+
     return render_template("admin/sitin_records.html",
                            records=records,
                            top_students=top_students)
@@ -1035,13 +1143,17 @@ def admin_sitin_records():
 @admin_required
 def admin_sitin_reports():
     conn = get_db_connection()
-    records = conn.execute("""
+    raw_records = conn.execute("""
         SELECT s.*, u.firstName, u.lastName, u.course, u.yearLevel
         FROM sit_in_history s
         JOIN users u ON s.studentId = u.idNumber
         ORDER BY s.timeIn DESC
     """).fetchall()
     conn.close()
+
+    # ── Convert to Philippine Time for display ──
+    records = records_to_ph(raw_records)
+
     return render_template("admin/sitin_reports.html", records=records)
 
 
@@ -1050,12 +1162,13 @@ def admin_sitin_reports():
 def admin_feedback_reports():
     conn = get_db_connection()
     feedbacks = conn.execute("""
-        SELECT s.id, s.studentId, s.labRoom, s.timeIn, s.feedback, s.feedbackRating,
+        SELECT s.id, s.studentId, s.labRoom, s.timeIn,
+               s.feedbackSubmittedAt, s.feedback, s.feedbackRating,
                u.firstName, u.lastName
         FROM sit_in_history s
         JOIN users u ON s.studentId = u.idNumber
         WHERE s.feedback IS NOT NULL AND s.feedback != ''
-        ORDER BY s.timeIn DESC
+        ORDER BY COALESCE(s.feedbackSubmittedAt, s.timeIn) DESC
     """).fetchall()
     conn.execute(
         "UPDATE sit_in_history SET feedbackSeen = 1 WHERE feedback IS NOT NULL AND feedbackSeen = 0"
@@ -1094,11 +1207,18 @@ def admin_reservation():
         ORDER BY ls.schedDate DESC, ls.timeSlot
     """).fetchall()
 
+    # ── Build set of student IDs that currently have an active sit-in ──
+    active_rows = conn.execute(
+        "SELECT studentId FROM sit_in_history WHERE status = 'Active'"
+    ).fetchall()
+    active_student_ids = {r["studentId"] for r in active_rows}
+
     conn.close()
     return render_template("admin/reservation.html",
                            reservations=reservations,
                            logs=logs,
-                           schedules=schedules)
+                           schedules=schedules,
+                           active_student_ids=active_student_ids)
 
 
 @app.route("/admin/reservation/action/<int:resv_id>", methods=["POST"])
@@ -1188,14 +1308,28 @@ def admin_reservation_sitin(resv_id):
         flash("Student is already sitting in for this reservation.", "error")
         return redirect(url_for("admin_reservation"))
 
+    # Prevent sit-in if the student already has ANY active session
+    any_active = conn.execute(
+        "SELECT id FROM sit_in_history WHERE studentId = ? AND status = 'Active'",
+        (resv["studentId"],)
+    ).fetchone()
+    if any_active:
+        conn.close()
+        flash(
+            f"{resv['firstName']} {resv['lastName']} is already in an active sit-in session. "
+            "They must be logged out first.",
+            "error"
+        )
+        return redirect(url_for("admin_reservation"))
+
     if resv["sessions"] is not None and resv["sessions"] <= 0:
         conn.close()
         flash(f"{resv['firstName']} {resv['lastName']} has no remaining sessions.", "error")
         return redirect(url_for("admin_reservation"))
 
     cur = conn.execute(
-        "INSERT INTO sit_in_history (studentId, labRoom, purpose) VALUES (?, ?, ?)",
-        (resv["studentId"], resv["labRoom"], resv["purpose"])
+        "INSERT INTO sit_in_history (studentId, labRoom, purpose, pcNumber) VALUES (?, ?, ?, ?)",
+        (resv["studentId"], resv["labRoom"], resv["purpose"], resv["pcNumber"])
     )
     sit_in_id = cur.lastrowid
     conn.execute("UPDATE reservations SET sitInId = ? WHERE id = ?", (sit_in_id, resv_id))
@@ -1216,7 +1350,7 @@ def admin_reservation_sitin(resv_id):
 def admin_add_schedule():
     lab_room    = request.form.get("labRoom", "").strip()
     sched_date  = request.form.get("schedDate", "").strip()
-    time_slot   = request.form.get("timeSlot", "").strip()   # now a slot label
+    time_slot   = request.form.get("timeSlot", "").strip()
     description = request.form.get("description", "").strip()
 
     if not all([lab_room, sched_date, time_slot]):
@@ -1253,8 +1387,8 @@ def admin_delete_schedule(sched_id):
 @app.route("/admin/lab-schedule/<int:sched_id>/pcs")
 @admin_required
 def admin_schedule_pcs(sched_id):
-    conn     = get_db_connection()
-    schedule = conn.execute("SELECT * FROM lab_schedules WHERE id = ?", (sched_id,)).fetchone()
+    conn      = get_db_connection()
+    schedule  = conn.execute("SELECT * FROM lab_schedules WHERE id = ?", (sched_id,)).fetchone()
     overrides = conn.execute(
         "SELECT * FROM schedule_pc_overrides WHERE scheduleId = ?", (sched_id,)
     ).fetchall()
@@ -1291,8 +1425,6 @@ def admin_save_schedule_pcs(sched_id):
 
 
 # ── Analytics ─────────────────────────────────────────────────────────────────
-HOURS_TARGET = 30
-
 @app.route("/admin/analytics")
 @admin_required
 def admin_analytics():
@@ -1321,59 +1453,14 @@ def admin_analytics():
     for row in purpose_per_lab:
         row['cnt'] = int(row['cnt'] or 0)
 
-    leaderboard_raw = conn.execute("""
-        SELECT
-            s.studentId,
-            u.firstName, u.lastName, u.course, u.yearLevel,
-            COUNT(*)                                              AS total_sessions,
-            COALESCE(SUM(s.adminRating),  0)                     AS total_admin_rating,
-            COALESCE(SUM(s.totalMinutes), 0)                     AS total_minutes,
-            SUM(CASE WHEN s.taskCompleted = 1 THEN 1 ELSE 0 END) AS tasks_done
-        FROM sit_in_history s
-        JOIN users u ON s.studentId = u.idNumber
-        GROUP BY s.studentId
-        ORDER BY total_sessions DESC
-    """).fetchall()
-
+    leaderboard = build_leaderboard(conn, limit=10)
     conn.close()
-
-    leaderboard = []
-    for r in leaderboard_raw:
-        total_sessions     = int(r["total_sessions"]     or 0)
-        total_admin_rating = int(r["total_admin_rating"] or 0)
-        total_minutes      = int(r["total_minutes"]      or 0)
-        tasks_done         = int(r["tasks_done"]         or 0)
-
-        hours_logged = total_minutes / 60.0
-        rating_norm  = total_admin_rating / 3.0
-        hours_norm   = min((hours_logged / HOURS_TARGET) * 100, 100)
-        task_norm    = (tasks_done / total_sessions * 100) if total_sessions > 0 else 0
-        composite    = (rating_norm * 0.50) + (hours_norm * 0.30) + (task_norm * 0.20)
-
-        leaderboard.append({
-            "studentId":          r["studentId"],
-            "firstName":          r["firstName"],
-            "lastName":           r["lastName"],
-            "course":             r["course"],
-            "yearLevel":          r["yearLevel"],
-            "total_sessions":     total_sessions,
-            "total_admin_rating": total_admin_rating,
-            "total_minutes":      total_minutes,
-            "tasks_done":         tasks_done,
-            "task_rate":          round(task_norm,   1),
-            "hours_norm":         round(hours_norm,  1),
-            "rating_norm":        round(rating_norm, 2),
-            "composite":          round(composite,   2),
-        })
-
-    leaderboard.sort(key=lambda x: x["composite"], reverse=True)
-    leaderboard = leaderboard[:10]
 
     return render_template("admin/analytics.html",
                            purpose_per_lab=purpose_per_lab,
                            lab_visits=lab_visits,
                            leaderboard=leaderboard,
-                           hours_target=HOURS_TARGET)
+                           hours_per_session=HOURS_PER_SESSION)
 
 
 if __name__ == "__main__":

@@ -44,7 +44,7 @@
         </div>
     </section>
 
-  
+
     <section class="about-section" id="about">
         <div class="section-title">
             <h2>Everything You Need to Manage Lab Access</h2>
@@ -70,7 +70,95 @@
         </div>
     </section>
 
-  
+
+    <!-- ══ DIVIDER ══════════════════════════════════════════════════════════ -->
+    <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-badge">
+            <i class="fa-solid fa-trophy"></i>
+            Top Performers
+        </div>
+        <div class="section-divider-line"></div>
+    </div>
+    <!-- ══ END DIVIDER ══════════════════════════════════════════════════════ -->
+
+    <!-- ══ LEADERBOARD SECTION ═══════════════════════════════════════════════ -->
+    <section class="landing-lb-section" id="leaderboard">
+        <div class="landing-lb-inner">
+            <div class="landing-lb-header">
+                <div class="landing-lb-title-wrap">
+                    <div class="landing-lb-trophy">🏆</div>
+                    <div>
+                        <h2 class="landing-lb-title">Top 10 Student Leaderboard</h2>
+                        <p class="landing-lb-sub">Ranked by composite performance score across all sit-in sessions</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if leaderboard %}
+            <div class="landing-lb-table-wrap">
+                <table class="landing-lb-table">
+                    <thead>
+                        <tr>
+                            <th style="width:56px">Rank</th>
+                            <th>Student</th>
+                            <th style="text-align:center">Sessions</th>
+                            <th style="text-align:center">Rating</th>
+                            <th style="text-align:center">Hours</th>
+                            <th style="min-width:130px">Task Rate</th>
+                            <th style="text-align:center">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in leaderboard %}
+                        <tr class="{% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+                            <td>
+                                <div class="landing-rank-badge {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% else %}rn{% endif %}">
+                                    {% if loop.index == 1 %}🥇
+                                    {% elif loop.index == 2 %}🥈
+                                    {% elif loop.index == 3 %}🥉
+                                    {% else %}{{ loop.index }}{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="landing-lb-student-cell">
+                                    <div class="landing-lb-avatar">{{ s['firstName'][0] }}{{ s['lastName'][0] }}</div>
+                                    <div>
+                                        <div class="landing-lb-student-name">{{ s['lastName'] }}, {{ s['firstName'] }}</div>
+                                        <div class="landing-lb-student-info">{{ s['course'] }} · {{ s['yearLevel'] }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="landing-lb-num-cell">{{ s['total_sessions'] }}</td>
+                            <td class="landing-lb-num-cell">{{ s['total_admin_rating'] }}★</td>
+                            <td class="landing-lb-num-cell">{{ "%.1f"|format(s['total_minutes'] / 60) }}h</td>
+                            <td>
+                                <div class="landing-taskrate-wrap">
+                                    <div class="landing-taskrate-bar">
+                                        <div class="landing-taskrate-fill" style="width:{{ s['task_rate'] }}%"></div>
+                                    </div>
+                                    <span class="landing-taskrate-pct">{{ s['task_rate'] }}%</span>
+                                </div>
+                            </td>
+                            <td style="text-align:center">
+                                <span class="landing-score-badge">{{ s['composite'] }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="landing-lb-empty">
+                <span style="font-size:2.5rem">🏆</span>
+                <p>The leaderboard will populate once students have completed sit-in sessions.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    <!-- ══ END LEADERBOARD ═══════════════════════════════════════════════════ -->
+
+
     <section class="community-section" id="community">
         <div class="community-inner">
             <h2>Our Community</h2>

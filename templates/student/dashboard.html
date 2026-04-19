@@ -9,43 +9,36 @@
 {% block content %}
 <div class="dash-grid">
 
-    <!-- LEFT: STUDENT INFO -->
+    <!-- ══ LEFT STICKY SIDEBAR — STUDENT INFO ══════════════════════════════════ -->
     <aside class="student-card">
         <div class="card">
             <div class="card-header ch-navy">
                 <div class="card-header-icon">
                     <i class="fa-solid fa-user"></i>
                 </div>
-                <span class="card-title">Student Information</span>
+                <span class="card-title">Student Profile</span>
             </div>
             <div class="card-body">
                 <div class="student-avatar-wrap">
                     {% if user['profileImage'] %}
-                    <img src="{{ url_for('static', filename='images/uploads/' + user['profileImage']) }}" alt="Profile" class="student-avatar">
+                    <img src="{{ url_for('static', filename='images/uploads/' + user['profileImage']) }}"
+                         alt="Profile" class="student-avatar">
                     {% else %}
-                    <div class="student-avatar-placeholder">{{ user['firstName'][0]|upper }}{{ user['lastName'][0]|upper }}</div>
+                    <div class="student-avatar-placeholder">
+                        {{ user['firstName'][0]|upper }}{{ user['lastName'][0]|upper }}
+                    </div>
                     {% endif %}
-                    <div class="student-name">{{ user['firstName'] }} {{ user['lastName'] }}{% if user['middleName'] %} {{ user['middleName'] }}{% endif %}</div>
+                    <div class="student-name">
+                        {{ user['firstName'] }} {{ user['lastName'] }}
+                        {% if user['middleName'] %} {{ user['middleName'] }}{% endif %}
+                    </div>
                     <div class="student-course-badge">{{ user['course'] }}</div>
                 </div>
 
-                {# Determine color class based on remaining sessions #}
-                {% set sess = user['sessions'] if user['sessions'] is not none else 0 %}
                 {% set sess_max = 30 if user['course'] in ('BSIT', 'BSCS') else 20 %}
-                {% set sess_pct = ((sess / sess_max) * 100) | int if sess_max > 0 else 0 %}
-                {% if sess_pct > 50 %}
-                    {% set sess_cls = 'sessions-ok' %}
-                {% elif sess_pct > 20 %}
-                    {% set sess_cls = 'sessions-mid' %}
-                {% else %}
-                    {% set sess_cls = 'sessions-low' %}
-                {% endif %}
+                {% set sess = user['sessions'] if user['sessions'] is not none else sess_max %}
+                {% set sess_used = sess_max - sess %}
 
-                <!-- FIX: sessions Jinja variables moved above .info-list so they
-                     are in scope, and the sessions row is now properly inside
-                     .info-list alongside the other rows. Previously the closing
-                     </div> of .info-list appeared before the sessions row,
-                     leaving it orphaned outside the list container. -->
                 <div class="info-list">
                     <div class="info-row">
                         <i class="fa-solid fa-id-card"></i>
@@ -82,24 +75,22 @@
                             <span class="info-value">{{ user['address'] or '—' }}</span>
                         </div>
                     </div>
-                    <!-- Sessions row — now correctly inside .info-list -->
                     <div class="info-row sessions-text-row">
                         <i class="fa-solid fa-hourglass-half"></i>
-                        <div class="sessions-pill {{ sess_cls }}">
-                            <span class="sessions-pill-label">Sessions</span>
-                            <span class="sessions-pill-value">
-                                <span class="sessions-current">{{ sess }}</span>
-                                <span class="sessions-sep">/</span>
-                                <span class="sessions-max">{{ sess_max }}</span>
+                        <div class="sessions-plain">
+                            <span class="sessions-plain-label">Sessions Remaining</span>
+                            <span class="sessions-plain-value">
+                                {{ sess }} of {{ sess_max }} left
                             </span>
+                            <span class="sessions-plain-note">{{ sess_used }} session{{ 's' if sess_used != 1 }} used</span>
                         </div>
                     </div>
-                </div><!-- /.info-list -->
-            </div><!-- /.card-body -->
-        </div><!-- /.card -->
+                </div>
+            </div>
+        </div>
     </aside>
 
-    <!-- CENTER: ANNOUNCEMENTS -->
+    <!-- ══ CENTER — ANNOUNCEMENTS ══════════════════════════════════════════════ -->
     <section class="announcements-col">
         <div class="card">
             <div class="card-header ch-gold">
@@ -116,10 +107,17 @@
                     {% for ann in announcements %}
                     <div class="announcement-item">
                         <div class="ann-meta">
-                            <span class="ann-author"><i class="fa-solid fa-shield-halved"></i> CCS Admin</span>
-                            <span class="ann-date">{{ ann['createdAt'][:10] }}</span>
+                            <span class="ann-author">
+                                <i class="fa-solid fa-shield-halved"></i> CCS Admin
+                            </span>
+                            <span class="ann-date">
+                                <i class="fa-regular fa-calendar" style="font-size:.6rem;opacity:.6"></i>
+                                {{ ann['createdAt'][:10] }}
+                            </span>
                         </div>
-                        {% if ann['title'] %}<div class="ann-title">{{ ann['title'] }}</div>{% endif %}
+                        {% if ann['title'] %}
+                        <div class="ann-title">{{ ann['title'] }}</div>
+                        {% endif %}
                         <div class="ann-body">{{ ann['content'] }}</div>
                     </div>
                     {% endfor %}
@@ -134,7 +132,7 @@
         </div>
     </section>
 
-    <!-- RIGHT: RULES & REGULATIONS -->
+    <!-- ══ RIGHT — RULES & REGULATIONS ════════════════════════════════════════ -->
     <aside class="rules-col">
         <div class="card">
             <div class="card-header ch-blue">
@@ -146,7 +144,7 @@
             <div class="card-body">
                 <div class="rules-header-block">
                     <strong>University of Cebu</strong>
-                    <span class="rules-heading-label">LABORATORY RULES AND REGULATIONS</span>
+                    <span class="rules-heading-label">Laboratory Rules and Regulations</span>
                 </div>
                 <p class="rules-intro">To avoid penalties, please observe the following at all times:</p>
                 <ol class="rules-list">

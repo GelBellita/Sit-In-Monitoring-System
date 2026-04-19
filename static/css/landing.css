@@ -313,9 +313,289 @@
     margin-top: 14px;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   SECTION DIVIDER
+══════════════════════════════════════════════════════════════════════════════ */
+.section-divider {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 80px;
+    background: #ffffff;
+}
+
+.section-divider-line {
+    flex: 1;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, #e3eaf8, transparent);
+}
+
+.section-divider-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 22px;
+    background: linear-gradient(120deg, #001d57 0%, #1a4db5 100%);
+    color: #F5A623;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 29, 87, 0.18);
+}
+
+.section-divider-badge i {
+    font-size: 11px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LEADERBOARD SECTION
+══════════════════════════════════════════════════════════════════════════════ */
+.landing-lb-section {
+    padding: 90px 80px;
+    background: #ffffff;
+}
+
+.landing-lb-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* Header */
+.landing-lb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+}
+
+.landing-lb-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.landing-lb-trophy {
+    font-size: 2.6rem;
+    line-height: 1;
+}
+
+.landing-lb-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 2.8vw, 34px);
+    font-weight: 700;
+    color: #003087;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+}
+
+.landing-lb-sub {
+    font-size: 15px;
+    color: #666;
+    margin: 0;
+}
+
+/* Table wrapper */
+.landing-lb-table-wrap {
+    border-radius: 16px;
+    border: 1px solid #e3eaf8;
+    box-shadow: 0 4px 24px rgba(0, 48, 135, 0.07);
+    overflow: hidden;
+}
+
+.landing-lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+/* Thead — matches the site's navy/gold palette */
+.landing-lb-table thead tr {
+    background: linear-gradient(120deg, #001d57 0%, #1a4db5 100%);
+}
+
+.landing-lb-table th {
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+}
+
+.landing-lb-table td {
+    padding: 13px 18px;
+    border-bottom: 1px solid #edf1fb;
+}
+
+.landing-lb-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.landing-lb-table tbody tr {
+    transition: background 0.15s;
+}
+
+.landing-lb-table tbody tr:hover {
+    background: #f0f5ff;
+}
+
+/* Top-3 row highlights */
+.landing-lb-table tbody tr.rank-1 {
+    background: linear-gradient(90deg, #fffbeb 0%, #ffffff 60%);
+}
+.landing-lb-table tbody tr.rank-2 {
+    background: linear-gradient(90deg, #f7f9fb 0%, #ffffff 60%);
+}
+.landing-lb-table tbody tr.rank-3 {
+    background: linear-gradient(90deg, #fff7f0 0%, #ffffff 60%);
+}
+.landing-lb-table tbody tr.rank-1:hover,
+.landing-lb-table tbody tr.rank-2:hover,
+.landing-lb-table tbody tr.rank-3:hover {
+    background: #f0f5ff;
+}
+
+/* Rank badge */
+.landing-rank-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
+.landing-rank-badge.r1 {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}
+.landing-rank-badge.r2 {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
+}
+.landing-rank-badge.r3 {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
+}
+.landing-rank-badge.rn {
+    background: #edf0f7;
+    color: #64748b;
+    font-size: 0.74rem;
+}
+
+/* Student cell */
+.landing-lb-student-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-lb-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #001d57, #1a4db5);
+    color: #F5A623;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 900;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 29, 87, 0.2);
+}
+
+.landing-lb-student-name {
+    font-weight: 700;
+    color: #001d57;
+    font-size: 0.86rem;
+}
+
+.landing-lb-student-info {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.landing-lb-num-cell {
+    font-weight: 700;
+    color: #374151;
+    text-align: center;
+}
+
+/* Task rate bar */
+.landing-taskrate-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.landing-taskrate-bar {
+    flex: 1;
+    height: 5px;
+    background: #e3eaf8;
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 60px;
+}
+
+.landing-taskrate-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #003087, #1a4db5);
+}
+
+.landing-taskrate-pct {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    white-space: nowrap;
+}
+
+/* Score badge — gold on navy, matching the site's CTA buttons */
+.landing-score-badge {
+    display: inline-block;
+    background: linear-gradient(120deg, #001d57 0%, #1a4db5 100%);
+    color: #F5A623;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 4px 13px;
+    border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(0, 29, 87, 0.2);
+    letter-spacing: 0.03em;
+}
+
+/* Empty state */
+.landing-lb-empty {
+    text-align: center;
+    padding: 60px 24px;
+    background: #f8faff;
+    border-radius: 16px;
+    border: 1px solid #e3eaf8;
+    color: #94a3b8;
+}
+
+.landing-lb-empty p {
+    margin: 14px 0 0;
+    font-size: 15px;
+    color: #666;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .about-section,
-    .community-section {
+    .community-section,
+    .landing-lb-section {
         padding: 60px 28px;
     }
 
@@ -323,7 +603,7 @@
         gap: 32px;
     }
 
-        .page-banner {
+    .page-banner {
         padding: 90px 28px 50px;
     }
 
@@ -335,5 +615,31 @@
     .features-section,
     .signup-strip {
         padding: 60px 28px;
+    }
+
+    .section-divider {
+        padding: 0 28px;
+    }
+
+    /* Hide Rating + Hours columns on tablet */
+    .landing-lb-table th:nth-child(4),
+    .landing-lb-table td:nth-child(4),
+    .landing-lb-table th:nth-child(5),
+    .landing-lb-table td:nth-child(5) {
+        display: none;
+    }
+
+    .landing-lb-title {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 520px) {
+    /* Also hide Sessions + Task Rate on small phones */
+    .landing-lb-table th:nth-child(3),
+    .landing-lb-table td:nth-child(3),
+    .landing-lb-table th:nth-child(6),
+    .landing-lb-table td:nth-child(6) {
+        display: none;
     }
 }
