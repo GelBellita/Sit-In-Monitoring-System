@@ -1,0 +1,163 @@
+{% extends 'student/studentLayout.html' %}
+
+{% block title %}Lab Software — CCS SitIn{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/student_software.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="labsw-page">
+
+    <!-- ── Hero ── -->
+    <div class="labsw-hero">
+        <div class="labsw-hero-orb labsw-hero-orb-1"></div>
+        <div class="labsw-hero-orb labsw-hero-orb-2"></div>
+        <div class="labsw-hero-orb labsw-hero-orb-3"></div>
+
+        <div class="labsw-hero-icon">
+            <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="labsw-hero-text">
+            <div class="labsw-hero-title">Lab Software Availability</div>
+            <div class="labsw-hero-sub">
+                Find out which software is installed in each CCS laboratory so you can<br>
+                <strong>choose the right lab</strong> before you sit in.
+            </div>
+        </div>
+        <div class="labsw-hero-stats">
+            <div class="labsw-hero-stat">
+                <div class="labsw-hero-stat-num">{{ lab_software | length }}</div>
+                <div class="labsw-hero-stat-lbl">Labs</div>
+            </div>
+            <div class="labsw-hero-stat">
+                <div class="labsw-hero-stat-num">
+                    {% set total_sw = namespace(count=0) %}
+                    {% for lab, items in lab_software.items() %}
+                        {% set total_sw.count = total_sw.count + items | length %}
+                    {% endfor %}
+                    {{ total_sw.count }}
+                </div>
+                <div class="labsw-hero-stat-lbl">Software</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Search + Filters ── -->
+    <div class="labsw-search-bar">
+        <div class="labsw-search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="labswSearch" placeholder="Search software across all labs… e.g. Visual Studio, XAMPP">
+        </div>
+        <div class="labsw-filter-chips" id="labswChips">
+            <span class="labsw-chip active" data-filter="all">All Labs</span>
+            {% for lab in lab_software.keys() %}
+            <span class="labsw-chip" data-filter="{{ lab }}">Lab {{ lab }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Lab Cards ── -->
+    <div class="labsw-grid" id="labswGrid">
+
+        {% if not lab_software %}
+        <div class="labsw-empty">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <p>No software data published yet.</p>
+        </div>
+        {% endif %}
+
+        {% for lab, items in lab_software.items() %}
+        <div class="labsw-card" data-lab="{{ lab }}" id="labsw-card-{{ lab }}">
+
+            <div class="labsw-card-header" onclick="toggleLabCard('{{ lab }}')">
+                <div class="labsw-card-lab-icon">
+                    <i class="fa-solid fa-desktop"></i>
+                </div>
+                <div class="labsw-card-lab-info">
+                    <div class="labsw-card-lab-name">Laboratory {{ lab }}</div>
+                    <div class="labsw-card-lab-sub">
+                        {% if lab in ['524','526'] %}Windows · Programming Suite A
+                        {% elif lab in ['528','530'] %}Windows · Database & Dev Suite
+                        {% elif lab in ['542','544'] %}Windows · General CS Suite
+                        {% else %}CCS Computer Laboratory{% endif %}
+                    </div>
+                </div>
+                <span class="labsw-card-count">{{ items | length }} apps</span>
+                <div class="labsw-card-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+            </div>
+
+            <div class="labsw-card-body" id="labsw-body-{{ lab }}">
+                <div class="labsw-sw-list">
+                    {% for sw in items %}
+                    <div class="labsw-sw-item" data-name="{{ sw.name | lower }}">
+                        <div class="labsw-sw-icon {{ sw.icon_color }}">
+                            <i class="{{ sw.icon }}"></i>
+                        </div>
+                        <div>
+                            <div class="labsw-sw-name">{{ sw.name }}</div>
+                            <div class="labsw-sw-ver">{{ sw.version }}</div>
+                        </div>
+                        <span class="labsw-sw-tag {{ sw.tag_class }}">{{ sw.tag }}</span>
+                    </div>
+                    {% endfor %}
+                    {% if not items %}
+                    <div style="text-align:center;padding:20px;color:#94a3b8;font-size:0.82rem;">
+                        No software listed for this lab yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+<script>
+// ── Toggle card open/close ────────────────────────────────────────────────────
+function toggleLabCard(lab) {
+    const card = document.getElementById('labsw-card-' + lab);
+    card.classList.toggle('labsw-card--open');
+}
+
+// ── Chip filter ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.labsw-chip').forEach(chip => {
+    chip.addEventListener('click', function () {
+        document.querySelectorAll('.labsw-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.labsw-card').forEach(card => {
+            const show = filter === 'all' || card.dataset.lab === filter;
+            card.style.display = show ? '' : 'none';
+        });
+    });
+});
+
+// ── Search ────────────────────────────────────────────────────────────────────
+document.getElementById('labswSearch').addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    if (!q) {
+        document.querySelectorAll('.labsw-card').forEach(c => c.style.display = '');
+        document.querySelectorAll('.labsw-sw-item').forEach(i => i.style.display = '');
+        // reset chip
+        document.querySelectorAll('.labsw-chip').forEach(c => c.classList.remove('active'));
+        document.querySelector('.labsw-chip[data-filter="all"]').classList.add('active');
+        return;
+    }
+    // clear chip selection
+    document.querySelectorAll('.labsw-chip').forEach(c => c.classList.remove('active'));
+
+    document.querySelectorAll('.labsw-card').forEach(card => {
+        let anyMatch = false;
+        card.querySelectorAll('.labsw-sw-item').forEach(item => {
+            const match = item.dataset.name.includes(q);
+            item.style.display = match ? '' : 'none';
+            if (match) anyMatch = true;
+        });
+        card.style.display = anyMatch ? '' : 'none';
+        if (anyMatch) card.classList.add('labsw-card--open');
+    });
+});
+</script>
+{% endblock %}

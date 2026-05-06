@@ -52,6 +52,16 @@
                         <i class="fa-solid fa-circle-info"></i> {{ r['rejectReason'] }}
                     </div>
                     {% endif %}
+                    {% if r['status'] != 'Rejected' %}
+                    <form method="POST"
+                          action="{{ url_for('student_cancel_reservation', resv_id=r['id']) }}"
+                          onsubmit="return confirm('Cancel this reservation? This cannot be undone.');"
+                          style="margin-top:8px;">
+                        <button type="submit" class="btn-cancel-resv">
+                            <i class="fa-solid fa-xmark"></i> Cancel Reservation
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}

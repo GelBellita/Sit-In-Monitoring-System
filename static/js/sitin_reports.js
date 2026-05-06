@@ -105,7 +105,7 @@
         );
     });
 
-    // ── PDF — portrait, short bond (216 × 279 mm / Letter) ───────────────────
+    // ── PDF — portrait, Letter (215.9 × 279.4 mm) ────────────────────────────
     document.getElementById('btnPDF')?.addEventListener('click', () => {
         const jsPDFLib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
         if (!jsPDFLib) {
@@ -115,10 +115,12 @@
 
         const doc = new jsPDFLib({ orientation: 'portrait', unit: 'mm', format: 'letter' });
 
-        const pageW   = doc.internal.pageSize.getWidth();
+        // Letter portrait usable width: 215.9 mm − 2×14 mm margins = 187.9 mm
+        const pageW   = doc.internal.pageSize.getWidth();   // 215.9
         const margin  = 14;
-        const usableW = pageW - margin * 2;
+        const usableW = pageW - margin * 2;                 // 187.9 mm
 
+        // ── Header banner ────────────────────────────────────────────────────
         doc.setFillColor(26, 39, 68);
         doc.rect(0, 0, pageW, 22, 'F');
 
@@ -149,6 +151,11 @@
 
         const { headers, rows } = getVisibleData();
 
+        // ── Column widths — must sum to exactly usableW (187.9 mm) ───────────
+        // #=7  ID=20  Name=38  Course=17  Year=14  Purpose=24  Lab=15  Login=14  Logout=14  Date=24.9
+        // Total = 7+20+38+17+14+24+15+14+14+24.9 = 187.9 ✓
+        const colWidths = [7, 20, 38, 17, 14, 24, 15, 14, 14, 24.9];
+
         doc.autoTable({
             head: [headers],
             body: rows,
@@ -156,30 +163,33 @@
             margin: { left: margin, right: margin },
             tableWidth: usableW,
             styles: {
-                fontSize: 7.5,
-                cellPadding: { top: 3, bottom: 3, left: 3, right: 3 },
+                fontSize: 7,
+                cellPadding: { top: 2.5, bottom: 2.5, left: 2.5, right: 2.5 },
                 textColor: [45, 55, 72],
                 overflow: 'linebreak',
+                lineColor: [220, 227, 237],
+                lineWidth: 0.1,
             },
             headStyles: {
                 fillColor: [26, 39, 68],
                 textColor: [255, 255, 255],
                 fontStyle: 'bold',
-                fontSize: 7.5,
+                fontSize: 7,
                 halign: 'left',
+                cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 },
             },
             alternateRowStyles: { fillColor: [247, 249, 252] },
             columnStyles: {
-                0: { cellWidth: 6,  halign: 'center' },
-                1: { cellWidth: 20 },
-                2: { cellWidth: 36 },
-                3: { cellWidth: 16 },
-                4: { cellWidth: 12 },
-                5: { cellWidth: 22 },
-                6: { cellWidth: 14 },
-                7: { cellWidth: 12 },
-                8: { cellWidth: 12 },
-                9: { cellWidth: 22 },
+                0: { cellWidth: colWidths[0],  halign: 'center' },
+                1: { cellWidth: colWidths[1] },
+                2: { cellWidth: colWidths[2] },
+                3: { cellWidth: colWidths[3] },
+                4: { cellWidth: colWidths[4] },
+                5: { cellWidth: colWidths[5] },
+                6: { cellWidth: colWidths[6] },
+                7: { cellWidth: colWidths[7],  halign: 'center' },
+                8: { cellWidth: colWidths[8],  halign: 'center' },
+                9: { cellWidth: colWidths[9] },
             },
             didDrawPage(data) {
                 const pg    = doc.internal.getCurrentPageInfo().pageNumber;

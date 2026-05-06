@@ -40,7 +40,7 @@
     <!-- ══ MAIN CONTENT ═════════════════════════════════════════════════════ -->
     <div class="dashboard-main">
 
-        <!-- ── Flash messages live here so they don't push the sidebar ── -->
+        <!-- ── Flash messages ── -->
         <div class="flash-area">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% for category, message in messages %}
@@ -109,6 +109,7 @@
 
     </div><!-- /.dashboard-main -->
 </div><!-- /.dashboard-wrapper -->
+
 {% endblock %}
 
 {% block extra_scripts %}

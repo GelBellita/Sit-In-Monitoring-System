@@ -1,0 +1,198 @@
+/* ── admin_software.css ──────────────────────────────────────────────────────
+   Place in: static/css/adminCss/admin_software.css
+─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Software Tab Panel ──────────────────────────────────────────────────── */
+.sw-page { padding: 0; }
+
+.sw-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e8ecf2;
+    flex-wrap: wrap; gap: 12px;
+}
+.sw-toolbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sw-toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+.sw-search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1.5px solid #cbd5e1;
+    border-radius: 8px; padding: 0 12px; transition: border-color .15s;
+}
+.sw-search-wrap:focus-within { border-color: #1a2744; }
+.sw-search-wrap i { font-size: 0.78rem; color: #94a3b8; }
+.sw-search-wrap input {
+    border: none; outline: none; height: 34px;
+    font-size: 0.83rem; color: #1a2744; background: transparent; width: 200px;
+}
+.sw-search-wrap input::placeholder { color: #94a3b8; }
+
+.btn-sw-import {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 18px; background: linear-gradient(135deg, #1a2744, #0a3080);
+    color: #F5A623; border: none; border-radius: 8px;
+    font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    transition: all .2s; letter-spacing: .02em; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(26,39,68,.25);
+}
+.btn-sw-import:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(26,39,68,.35); }
+.btn-sw-import i { font-size: 0.85rem; }
+
+.btn-sw-add {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; background: #fff; color: #1a2744;
+    border: 1.5px solid #dce3ed; border-radius: 8px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.btn-sw-add:hover { border-color: #1a2744; background: #f0f3f8; }
+
+/* ── Lab Accordion ───────────────────────────────────────────────────────── */
+.sw-labs { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+.sw-lab-block {
+    border: 1.5px solid #e2e8f0; border-radius: 12px;
+    overflow: hidden; transition: box-shadow .2s;
+    background: #fff;
+}
+.sw-lab-block:hover { box-shadow: 0 4px 16px rgba(26,39,68,.08); }
+.sw-lab-block.expanded { border-color: #1a2744; }
+
+.sw-lab-header {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+    cursor: pointer; user-select: none; transition: background .15s;
+    background: #fff;
+}
+.sw-lab-header:hover { background: #f8fafc; }
+.sw-lab-block.expanded .sw-lab-header { background: #1a2744; }
+
+.sw-lab-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: #eef2ff; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; color: #1a2744; flex-shrink: 0; transition: all .2s;
+}
+.sw-lab-block.expanded .sw-lab-icon { background: rgba(245,166,35,.2); color: #F5A623; }
+
+.sw-lab-name {
+    font-size: 0.92rem; font-weight: 700; color: #1a2744; transition: color .2s;
+}
+.sw-lab-block.expanded .sw-lab-name { color: #fff; }
+
+.sw-lab-count {
+    font-size: 0.72rem; color: #94a3b8; margin-top: 2px; transition: color .2s;
+}
+.sw-lab-block.expanded .sw-lab-count { color: rgba(255,255,255,.6); }
+
+.sw-lab-chevron {
+    margin-left: auto; font-size: 0.8rem; color: #94a3b8;
+    transition: transform .25s, color .2s;
+}
+.sw-lab-block.expanded .sw-lab-chevron { transform: rotate(180deg); color: #F5A623; }
+
+.sw-lab-badge {
+    margin-left: auto; padding: 3px 10px; border-radius: 20px;
+    background: rgba(245,166,35,.15); color: #b45309;
+    font-size: 0.68rem; font-weight: 700; border: 1px solid rgba(245,166,35,.3);
+    transition: all .2s;
+}
+.sw-lab-block.expanded .sw-lab-badge { background: rgba(245,166,35,.25); color: #F5A623; border-color: rgba(245,166,35,.5); }
+
+.sw-lab-body {
+    display: none; padding: 14px 18px; border-top: 1px solid #f0f3f8;
+}
+.sw-lab-block.expanded .sw-lab-body { display: block; }
+
+/* ── Software Grid inside lab ────────────────────────────────────────────── */
+.sw-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px; margin-bottom: 14px;
+}
+
+.sw-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border: 1.5px solid #e9eef6; border-radius: 9px; background: #f8fafc;
+    transition: all .15s; position: relative; group: true;
+}
+.sw-item:hover { border-color: #1a2744; background: #fff; box-shadow: 0 2px 8px rgba(26,39,68,.07); }
+
+.sw-item-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 1.1rem;
+}
+/* Icon color variants */
+.sw-item-icon.ic-blue   { background: #dbeafe; color: #2563eb; }
+.sw-item-icon.ic-purple { background: #ede9fe; color: #7c3aed; }
+.sw-item-icon.ic-orange { background: #ffedd5; color: #ea580c; }
+.sw-item-icon.ic-green  { background: #dcfce7; color: #16a34a; }
+.sw-item-icon.ic-red    { background: #fee2e2; color: #dc2626; }
+.sw-item-icon.ic-navy   { background: #e0e7ff; color: #1a2744; }
+.sw-item-icon.ic-teal   { background: #ccfbf1; color: #0d9488; }
+.sw-item-icon.ic-yellow { background: #fef9c3; color: #a16207; }
+.sw-item-icon.ic-pink   { background: #fce7f3; color: #be185d; }
+.sw-item-icon.ic-gray   { background: #f1f5f9; color: #475569; }
+
+.sw-item-info { flex: 1; min-width: 0; }
+.sw-item-name { font-size: 0.78rem; font-weight: 700; color: #1a2744; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sw-item-ver  { font-size: 0.68rem; color: #94a3b8; margin-top: 1px; }
+
+.sw-item-del {
+    position: absolute; top: 6px; right: 6px;
+    width: 20px; height: 20px; border-radius: 5px;
+    background: #fee2e2; color: #dc2626; border: none;
+    font-size: 0.6rem; cursor: pointer; display: none;
+    align-items: center; justify-content: center; transition: all .15s;
+}
+.sw-item:hover .sw-item-del { display: flex; }
+.sw-item-del:hover { background: #dc2626; color: #fff; }
+
+/* ── Add Software row ────────────────────────────────────────────────────── */
+.sw-add-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;
+}
+.sw-add-input {
+    height: 34px; padding: 0 12px; border: 1.5px solid #dce3ed;
+    border-radius: 7px; font-size: 0.8rem; color: #1a2744; outline: none;
+    transition: border-color .15s; background: #fff;
+}
+.sw-add-input:focus { border-color: #1a2744; }
+.sw-add-input.wide { width: 200px; }
+.sw-add-input.narrow { width: 110px; }
+.sw-add-btn {
+    height: 34px; padding: 0 14px; background: #1a2744; color: #fff;
+    border: none; border-radius: 7px; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; transition: background .15s; white-space: nowrap;
+}
+.sw-add-btn:hover { background: #243460; }
+
+/* ── Import confirm modal ────────────────────────────────────────────────── */
+.sw-import-modal { max-width: 480px; }
+.sw-import-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.sw-import-header i { font-size: 1.6rem; color: #1a2744; }
+.sw-import-title { font-size: 1rem; font-weight: 700; color: #1a2744; }
+.sw-import-sub   { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+.sw-import-preview {
+    background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
+    padding: 14px; margin-bottom: 16px; max-height: 260px; overflow-y: auto;
+}
+.sw-import-lab-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid #f0f3f8;
+}
+.sw-import-lab-row:last-child { border-bottom: none; }
+.sw-import-lab-name { font-size: 0.82rem; font-weight: 700; color: #1a2744; width: 70px; flex-shrink: 0; }
+.sw-import-count    { font-size: 0.75rem; color: #64748b; }
+
+.sw-import-note {
+    font-size: 0.76rem; color: #3b5bdb; background: #eef2ff;
+    border: 1px solid #c7d2fe; border-radius: 7px;
+    padding: 10px 13px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px;
+}
+.sw-import-note i { flex-shrink: 0; margin-top: 2px; color: #3b5bdb; }
+
+.sw-import-success {
+    display: none; flex-direction: column; align-items: center;
+    gap: 10px; padding: 20px; text-align: center;
+}
+.sw-import-success i { font-size: 2.5rem; color: #10b981; }
+.sw-import-success p { font-size: 0.9rem; font-weight: 600; color: #1a2744; }
+.sw-import-success small { font-size: 0.75rem; color: #64748b; }

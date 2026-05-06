@@ -1,10 +1,13 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 import sqlite3
 import os
+import json, os
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "gel119870"
+
+SOFTWARE_DATA_PATH = os.path.join('static', 'data', 'lab_software.json')
 
 @app.template_filter('to12h')
 def to12h(time_str):
@@ -312,7 +315,8 @@ def add_notification(user_id, message, notif_type="info"):
 
 
 # ── Leaderboard helper (shared by home + analytics) ──────────────────────────
-HOURS_PER_SESSION = 2   # expected max hours a student should stay per session
+# ── Leaderboard helper (shared by home + analytics) ──────────────────────────
+HOURS_PER_SESSION = 2
 
 def build_leaderboard(conn, limit=10):
     leaderboard_raw = conn.execute("""
@@ -336,12 +340,19 @@ def build_leaderboard(conn, limit=10):
         total_minutes      = int(r["total_minutes"]      or 0)
         tasks_done         = int(r["tasks_done"]         or 0)
 
-        hours_logged    = total_minutes / 60.0
-        expected_hours  = total_sessions * HOURS_PER_SESSION   # e.g. 5 sessions → 10 hrs max
-        rating_norm     = total_admin_rating / 3.0
-        hours_norm      = min((hours_logged / expected_hours) * 100, 100) if expected_hours > 0 else 0
-        task_norm       = (tasks_done / total_sessions * 100) if total_sessions > 0 else 0
-        composite       = (rating_norm * 0.50) + (hours_norm * 0.30) + (task_norm * 0.20)
+        actual_hours   = total_minutes / 60.0
+        expected_hours = total_sessions * HOURS_PER_SESSION
+        max_stars      = total_sessions * 3
+
+        # Rating: (stars earned / max possible stars) * 100, capped at 100
+        rating_norm = min((total_admin_rating / max_stars) * 100, 100) if max_stars > 0 else 0
+        # Hours: (actual hrs / expected hrs) * 100, capped at 100
+        hours_norm  = min((actual_hours / expected_hours) * 100, 100) if expected_hours > 0 else 0
+        # Tasks: (tasks done / sessions) * 100
+        task_norm   = (tasks_done / total_sessions * 100) if total_sessions > 0 else 0
+
+        # Weights: Rating 50%, Hours 30%, Task 20%
+        composite = (rating_norm * 0.50) + (hours_norm * 0.30) + (task_norm * 0.20)
 
         leaderboard.append({
             "studentId":          r["studentId"],
@@ -355,13 +366,12 @@ def build_leaderboard(conn, limit=10):
             "tasks_done":         tasks_done,
             "task_rate":          round(task_norm,   1),
             "hours_norm":         round(hours_norm,  1),
-            "rating_norm":        round(rating_norm, 2),
-            "composite":          round(composite,   2),
+            "rating_norm":        round(rating_norm, 1),
+            "composite":          round(composite,   1),
         })
 
     leaderboard.sort(key=lambda x: x["composite"], reverse=True)
     return leaderboard[:limit]
-
 
 # ── Public routes ─────────────────────────────────────────────────────────────
 @app.route("/")
@@ -500,6 +510,39 @@ def mark_notifications_read():
     conn.close()
     return jsonify({"ok": True})
 
+@app.route("/student/reservations/cancel/<int:resv_id>", methods=["POST"])
+@login_required
+def student_cancel_reservation(resv_id):
+    conn = get_db_connection()
+    resv = conn.execute(
+        "SELECT * FROM reservations WHERE id = ? AND studentId = ?",
+        (resv_id, session["user_id"])
+    ).fetchone()
+    if not resv:
+        conn.close()
+        flash("Reservation not found.", "error")
+        return redirect(url_for("reservation"))
+    if resv["status"] == "Rejected":
+        conn.close()
+        flash("This reservation is already cancelled/rejected.", "error")
+        return redirect(url_for("reservation"))
+    # If there's a linked sit-in that is active, don't allow cancel
+    if resv.get("sitInId"):
+        sit = conn.execute(
+            "SELECT status FROM sit_in_history WHERE id = ?", (resv["sitInId"],)
+        ).fetchone()
+        if sit and sit["status"] == "Active":
+            conn.close()
+            flash("Cannot cancel — sit-in session is already in progress.", "error")
+            return redirect(url_for("reservation"))
+    conn.execute(
+        "UPDATE reservations SET status = 'Rejected', rejectReason = 'Cancelled by student' WHERE id = ?",
+        (resv_id,)
+    )
+    conn.commit()
+    conn.close()
+    flash("Reservation cancelled successfully.", "success")
+    return redirect(url_for("reservation"))
 
 @app.route("/student/reservations/clear", methods=["POST"])
 @login_required
@@ -1423,7 +1466,111 @@ def admin_save_schedule_pcs(sched_id):
     conn.close()
     return jsonify({"ok": True, "saved": len(available_pcs)})
 
-
+DEFAULT_SOFTWARE = {
+    "524": [
+        {"name": "Visual Studio 2022",   "version": "2022 Community", "icon": "fa-solid fa-code",         "icon_color": "ic-purple", "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "Visual Studio Code",   "version": "1.88+",          "icon": "fa-solid fa-code",         "icon_color": "ic-blue",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "XAMPP",                "version": "v8.2",           "icon": "fa-solid fa-server",       "icon_color": "ic-orange", "tag": "Web",  "tag_class": "tag-web"},
+        {"name": "Git",                  "version": "2.44",           "icon": "fa-brands fa-git-alt",     "icon_color": "ic-red",    "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "Python",               "version": "3.12",           "icon": "fa-brands fa-python",      "icon_color": "ic-yellow", "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Node.js",              "version": "v20 LTS",        "icon": "fa-brands fa-node-js",     "icon_color": "ic-green",  "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Sublime Text",         "version": "4",              "icon": "fa-regular fa-file-code",  "icon_color": "ic-gray",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "Cisco Packet Tracer",  "version": "8.2",            "icon": "fa-solid fa-network-wired","icon_color": "ic-teal",   "tag": "Tool", "tag_class": "tag-tool"},
+    ],
+    "526": [
+        {"name": "Visual Studio 2022",   "version": "2022 Community", "icon": "fa-solid fa-code",         "icon_color": "ic-purple", "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "Visual Studio Code",   "version": "1.88+",          "icon": "fa-solid fa-code",         "icon_color": "ic-blue",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "XAMPP",                "version": "v8.2",           "icon": "fa-solid fa-server",       "icon_color": "ic-orange", "tag": "Web",  "tag_class": "tag-web"},
+        {"name": "Git",                  "version": "2.44",           "icon": "fa-brands fa-git-alt",     "icon_color": "ic-red",    "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "Python",               "version": "3.12",           "icon": "fa-brands fa-python",      "icon_color": "ic-yellow", "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Node.js",              "version": "v20 LTS",        "icon": "fa-brands fa-node-js",     "icon_color": "ic-green",  "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Sublime Text",         "version": "4",              "icon": "fa-regular fa-file-code",  "icon_color": "ic-gray",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "Cisco Packet Tracer",  "version": "8.2",            "icon": "fa-solid fa-network-wired","icon_color": "ic-teal",   "tag": "Tool", "tag_class": "tag-tool"},
+    ],
+    "528": [
+        {"name": "Visual Studio 2022",   "version": "2022 Enterprise","icon": "fa-solid fa-code",         "icon_color": "ic-purple", "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "SQL Server 2022",      "version": "16.0",           "icon": "fa-solid fa-database",     "icon_color": "ic-navy",   "tag": "DB",   "tag_class": "tag-db"},
+        {"name": "SSMS",                 "version": "19.3",           "icon": "fa-solid fa-table-columns","icon_color": "ic-blue",   "tag": "DB",   "tag_class": "tag-db"},
+        {"name": "Visual Studio Code",   "version": "1.88+",          "icon": "fa-solid fa-code",         "icon_color": "ic-blue",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "XAMPP",                "version": "v8.2",           "icon": "fa-solid fa-server",       "icon_color": "ic-orange", "tag": "Web",  "tag_class": "tag-web"},
+        {"name": "Git",                  "version": "2.44",           "icon": "fa-brands fa-git-alt",     "icon_color": "ic-red",    "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "Python",               "version": "3.12",           "icon": "fa-brands fa-python",      "icon_color": "ic-yellow", "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Postman",              "version": "10.x",           "icon": "fa-solid fa-paper-plane",  "icon_color": "ic-orange", "tag": "Tool", "tag_class": "tag-tool"},
+    ],
+    "530": [
+        {"name": "Visual Studio 2022",   "version": "2022 Enterprise","icon": "fa-solid fa-code",         "icon_color": "ic-purple", "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "SQL Server 2022",      "version": "16.0",           "icon": "fa-solid fa-database",     "icon_color": "ic-navy",   "tag": "DB",   "tag_class": "tag-db"},
+        {"name": "SSMS",                 "version": "19.3",           "icon": "fa-solid fa-table-columns","icon_color": "ic-blue",   "tag": "DB",   "tag_class": "tag-db"},
+        {"name": "Visual Studio Code",   "version": "1.88+",          "icon": "fa-solid fa-code",         "icon_color": "ic-blue",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "XAMPP",                "version": "v8.2",           "icon": "fa-solid fa-server",       "icon_color": "ic-orange", "tag": "Web",  "tag_class": "tag-web"},
+        {"name": "Git",                  "version": "2.44",           "icon": "fa-brands fa-git-alt",     "icon_color": "ic-red",    "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "Python",               "version": "3.12",           "icon": "fa-brands fa-python",      "icon_color": "ic-yellow", "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Postman",              "version": "10.x",           "icon": "fa-solid fa-paper-plane",  "icon_color": "ic-orange", "tag": "Tool", "tag_class": "tag-tool"},
+    ],
+    "542": [
+        {"name": "Visual Studio Code",   "version": "1.88+",          "icon": "fa-solid fa-code",         "icon_color": "ic-blue",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "XAMPP",                "version": "v8.2",           "icon": "fa-solid fa-server",       "icon_color": "ic-orange", "tag": "Web",  "tag_class": "tag-web"},
+        {"name": "Arduino IDE",          "version": "2.3",            "icon": "fa-solid fa-microchip",    "icon_color": "ic-teal",   "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Python",               "version": "3.12",           "icon": "fa-brands fa-python",      "icon_color": "ic-yellow", "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Git",                  "version": "2.44",           "icon": "fa-brands fa-git-alt",     "icon_color": "ic-red",    "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "LibreOffice",          "version": "7.6",            "icon": "fa-solid fa-file-word",    "icon_color": "ic-navy",   "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "VirtualBox",           "version": "7.0",            "icon": "fa-solid fa-box",          "icon_color": "ic-gray",   "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "Eclipse IDE",          "version": "2024-03",        "icon": "fa-solid fa-circle-dot",   "icon_color": "ic-pink",   "tag": "IDE",  "tag_class": "tag-ide"},
+    ],
+    "544": [
+        {"name": "Visual Studio Code",   "version": "1.88+",          "icon": "fa-solid fa-code",         "icon_color": "ic-blue",   "tag": "IDE",  "tag_class": "tag-ide"},
+        {"name": "XAMPP",                "version": "v8.2",           "icon": "fa-solid fa-server",       "icon_color": "ic-orange", "tag": "Web",  "tag_class": "tag-web"},
+        {"name": "Arduino IDE",          "version": "2.3",            "icon": "fa-solid fa-microchip",    "icon_color": "ic-teal",   "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Python",               "version": "3.12",           "icon": "fa-brands fa-python",      "icon_color": "ic-yellow", "tag": "Dev",  "tag_class": "tag-dev"},
+        {"name": "Git",                  "version": "2.44",           "icon": "fa-brands fa-git-alt",     "icon_color": "ic-red",    "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "LibreOffice",          "version": "7.6",            "icon": "fa-solid fa-file-word",    "icon_color": "ic-navy",   "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "VirtualBox",           "version": "7.0",            "icon": "fa-solid fa-box",          "icon_color": "ic-gray",   "tag": "Tool", "tag_class": "tag-tool"},
+        {"name": "Eclipse IDE",          "version": "2024-03",        "icon": "fa-solid fa-circle-dot",   "icon_color": "ic-pink",   "tag": "IDE",  "tag_class": "tag-ide"},
+    ],
+}
+ 
+ 
+def load_software_data():
+    """Load published software data from JSON file, or return defaults."""
+    if os.path.exists(SOFTWARE_DATA_PATH):
+        try:
+            with open(SOFTWARE_DATA_PATH, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return DEFAULT_SOFTWARE
+ 
+ 
+def save_software_data(data):
+    """Persist software data to JSON file."""
+    os.makedirs(os.path.dirname(SOFTWARE_DATA_PATH), exist_ok=True)
+    with open(SOFTWARE_DATA_PATH, 'w') as f:
+        json.dump(data, f, indent=2)
+ 
+ 
+# ── Student route ─────────────────────────────────────────────────────────────
+@app.route('/student/lab-software')
+@login_required
+def student_software():       
+    lab_software_data = load_software_data()
+    from types import SimpleNamespace
+    processed = {}
+    for lab, items in lab_software_data.items():
+        processed[lab] = [SimpleNamespace(**item) for item in items]
+    return render_template('student/student_software.html', lab_software=processed)
+ 
+# ── Admin: publish software ───────────────────────────────────────────────────
+@app.route('/admin/software/publish', methods=['POST'])
+@admin_required  # use whatever your decorator is
+def admin_publish_software():
+    try:
+        data = request.get_json()
+        lab_software = data.get('lab_software', {})
+        save_software_data(lab_software)
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+    
 # ── Analytics ─────────────────────────────────────────────────────────────────
 @app.route("/admin/analytics")
 @admin_required

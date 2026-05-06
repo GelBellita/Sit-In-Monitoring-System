@@ -9,10 +9,9 @@
 {% block content %}
 <div class="hist-layout">
 
-    <!-- ── LEFT SIDEBAR — same as dashboard ─────────────────── -->
+    <!-- ── LEFT SIDEBAR ─────────────────────────────────────── -->
     <aside class="hist-sidebar">
 
-        <!-- Top header bar -->
         <div class="hist-sidebar-header">
             <div class="hist-sidebar-header-icon">
                 <i class="fa-solid fa-user"></i>
@@ -88,7 +87,6 @@
             </div>
         </div>
 
-        <!-- Mini stat pills -->
         <div class="hist-mini-stats">
             {% set done_count = records|selectattr('status','equalto','Done')|list|length %}
             {% set active_count = records|selectattr('status','equalto','Active')|list|length %}
@@ -108,8 +106,107 @@
 
     </aside>
 
-    <!-- ── RIGHT: SESSIONS TABLE ─────────────────────────────── -->
+    <!-- ── RIGHT MAIN ─────────────────────────────────────────── -->
     <section class="hist-main">
+
+        <!-- ══ SIT-IN SUMMARY BANNER ══ -->
+        {% set done_records = records|selectattr('status','equalto','Done')|list %}
+        {% set total_minutes = done_records|sum(attribute='totalMinutes') %}
+        {% set total_hours = (total_minutes / 60)|round(1) %}
+        {% set avg_minutes = (total_minutes / done_records|length)|round(0)|int if done_records|length > 0 else 0 %}
+        {% set longest_minutes = done_records|map(attribute='totalMinutes')|max if done_records|length > 0 else 0 %}
+
+        <div class="hist-summary-banner">
+            <!-- Decorative orbs -->
+            <div class="hsb-orb hsb-orb-1"></div>
+            <div class="hsb-orb hsb-orb-2"></div>
+            <div class="hsb-orb hsb-orb-3"></div>
+
+            <div class="hsb-header">
+                <div class="hsb-header-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                    <div class="hsb-title">Sit-In Summary</div>
+                    <div class="hsb-subtitle">Your laboratory usage at a glance</div>
+                </div>
+            </div>
+
+            <div class="hsb-cards">
+
+                <!-- Total Hours -->
+                <div class="hsb-card">
+                    <div class="hsb-card-glow hsb-glow-blue"></div>
+                    <div class="hsb-card-icon-wrap hsb-icon-blue">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div class="hsb-card-body">
+                        <div class="hsb-card-val">
+                            {{ total_hours }}
+                            <span class="hsb-card-unit">hrs</span>
+                        </div>
+                        <div class="hsb-card-label">Total Sit-In Hours</div>
+                        <div class="hsb-card-sub">{{ total_minutes }} minutes total</div>
+                    </div>
+                </div>
+
+                <!-- Number of Sessions -->
+                <div class="hsb-card">
+                    <div class="hsb-card-glow hsb-glow-gold"></div>
+                    <div class="hsb-card-icon-wrap hsb-icon-gold">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div class="hsb-card-body">
+                        <div class="hsb-card-val">
+                            {{ records|length }}
+                            <span class="hsb-card-unit">sessions</span>
+                        </div>
+                        <div class="hsb-card-label">Total Sessions</div>
+                        <div class="hsb-card-sub">{{ done_count }} completed · {{ active_count }} active</div>
+                    </div>
+                </div>
+
+                <!-- Average Duration -->
+                <div class="hsb-card">
+                    <div class="hsb-card-glow hsb-glow-green"></div>
+                    <div class="hsb-card-icon-wrap hsb-icon-green">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </div>
+                    <div class="hsb-card-body">
+                        <div class="hsb-card-val">
+                            {% if avg_minutes >= 60 %}
+                                {{ (avg_minutes / 60)|round(1) }}<span class="hsb-card-unit">hrs</span>
+                            {% else %}
+                                {{ avg_minutes }}<span class="hsb-card-unit">min</span>
+                            {% endif %}
+                        </div>
+                        <div class="hsb-card-label">Avg Session Duration</div>
+                        <div class="hsb-card-sub">Per completed session</div>
+                    </div>
+                </div>
+
+                <!-- Longest Session -->
+                <div class="hsb-card">
+                    <div class="hsb-card-glow hsb-glow-purple"></div>
+                    <div class="hsb-card-icon-wrap hsb-icon-purple">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div class="hsb-card-body">
+                        <div class="hsb-card-val">
+                            {% if longest_minutes >= 60 %}
+                                {{ (longest_minutes / 60)|round(1) }}<span class="hsb-card-unit">hrs</span>
+                            {% else %}
+                                {{ longest_minutes }}<span class="hsb-card-unit">min</span>
+                            {% endif %}
+                        </div>
+                        <div class="hsb-card-label">Longest Session</div>
+                        <div class="hsb-card-sub">Personal best record</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- ══ END SUMMARY ══ -->
 
         <div class="hist-card">
 
@@ -139,6 +236,7 @@
                                 <th>Purpose</th>
                                 <th>Time In</th>
                                 <th>Time Out</th>
+                                <th>Duration</th>
                                 <th>Status</th>
                                 <th>Feedback</th>
                             </tr>
@@ -177,6 +275,32 @@
                                         Ongoing
                                     </span>
                                     {% else %}—{% endif %}
+                                </td>
+                                <!-- Duration column -->
+                                <td class="hist-duration-cell">
+                                    {% if r['status'] == 'Done' and r['totalMinutes'] %}
+                                        {% set mins = r['totalMinutes'] %}
+                                        {% if mins >= 60 %}
+                                            {% set h = (mins // 60) %}
+                                            {% set m = (mins % 60) %}
+                                            <span class="hist-dur-badge hist-dur-done">
+                                                <i class="fa-solid fa-stopwatch"></i>
+                                                {{ h }}h{% if m %} {{ m }}m{% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="hist-dur-badge hist-dur-done">
+                                                <i class="fa-solid fa-stopwatch"></i>
+                                                {{ mins }}m
+                                            </span>
+                                        {% endif %}
+                                    {% elif r['status'] == 'Active' %}
+                                        <span class="hist-dur-badge hist-dur-active">
+                                            <i class="fa-solid fa-circle" style="font-size:.45rem;animation:hblink 1s infinite;"></i>
+                                            Live
+                                        </span>
+                                    {% else %}
+                                        <span class="hist-dash">—</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% set s = r['status']|lower %}
@@ -229,7 +353,7 @@
     </section>
 </div>
 
-<!-- ── Feedback Modal ─────────────────────────────────────────────────────── -->
+<!-- ── Feedback Modal ──────────────────────────────────────────────────────── -->
 <div class="fb-modal-backdrop" id="fbModalBackdrop">
     <div class="fb-modal">
         <div class="fb-modal-header">

@@ -237,23 +237,29 @@
     background: #e6f4ea; color: #276749; white-space: nowrap;
 }
 
-/* ── Print styles ─────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   PRINT STYLES  —  Portrait, fits all columns on one page
+══════════════════════════════════════════════════════ */
 @media print {
 
-    @page { size: landscape; margin: 14mm; }
+    /* Portrait letter/A4, tight margins to maximise usable width */
+    @page {
+        size: portrait;
+        margin: 10mm 8mm 12mm 8mm;
+    }
 
-    /* Hide everything */
+    /* Hide everything first */
     body * { visibility: hidden; }
 
-    /* Show only the table card */
+    /* Reveal the card and all its children */
     .report-table-card,
     .report-table-card * { visibility: visible; }
 
-    /* Hide toolbar and footer */
+    /* Hide chrome that doesn't belong on paper */
     .report-toolbar,
     .report-footer { display: none !important; }
 
-    /* Card fills the page, clean like feedback report */
+    /* Card fills the printable area */
     .report-table-card {
         position: absolute;
         top: 0;
@@ -264,16 +270,16 @@
         border-radius: 0;
     }
 
-    /* Remove scroll so all rows print */
+    /* Remove scroll constraints so all rows print */
     .report-table-wrap {
         max-height: none !important;
         overflow: visible !important;
     }
 
-    /* Keep hidden rows hidden */
+    /* Hidden rows stay hidden */
     .report-row.hidden { display: none !important; }
 
-    /* Navy header bar — like feedback report card header */
+    /* ── Header banner ───────────────────────────────── */
     .report-table-wrap::before {
         content: "CCS Sit-in Records Report";
         display: block;
@@ -281,7 +287,7 @@
         color: #fff;
         font-size: 11pt;
         font-weight: 700;
-        padding: 12px 18px 4px;
+        padding: 10px 14px 3px;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         visibility: visible;
@@ -292,12 +298,35 @@
         display: block;
         background: #1a2744;
         color: rgba(255,255,255,.6);
-        font-size: 8pt;
-        padding: 0 18px 12px;
+        font-size: 7.5pt;
+        padding: 0 14px 10px;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         visibility: visible;
     }
+
+    /* ── Table: fills full width, small font, no wrapping ── */
+    .report-table {
+        width: 100% !important;
+        table-layout: fixed;       /* columns share space evenly */
+        border-collapse: collapse;
+        font-size: 7pt;            /* small enough to fit portrait */
+    }
+
+    /* Column proportional widths (total = 100%) */
+    .report-table colgroup { display: none; }
+
+    .report-table thead th:nth-child(1)  { width: 3.5%; }   /* #      */
+    .report-table thead th:nth-child(2)  { width: 9%;   }   /* ID No. */
+    .report-table thead th:nth-child(3)  { width: 17%;  }   /* Name   */
+    .report-table thead th:nth-child(4)  { width: 8%;   }   /* Course */
+    .report-table thead th:nth-child(5)  { width: 7%;   }   /* Year   */
+    .report-table thead th:nth-child(6)  { width: 12%;  }   /* Purpose*/
+    .report-table thead th:nth-child(7)  { width: 7%;   }   /* Lab    */
+    .report-table thead th:nth-child(8)  { width: 7%;   }   /* PC     */
+    .report-table thead th:nth-child(9)  { width: 6.5%; }   /* In     */
+    .report-table thead th:nth-child(10) { width: 6.5%; }   /* Out    */
+    .report-table thead th:nth-child(11) { width: 10%;  }   /* Date   */
 
     /* Sticky header fix for print */
     .report-table thead th {
@@ -305,9 +334,26 @@
         background: #f0f3f8 !important;
         color: #4a5568 !important;
         border-bottom: 2px solid #dce3ed !important;
+        font-size: 6.5pt !important;
+        padding: 5px 4px !important;
+        white-space: nowrap;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+
+    .report-table td {
+        padding: 4px !important;
+        font-size: 7pt !important;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    /* Keep name/id/time from wrapping where possible */
+    .name-cell  { white-space: normal !important; font-size: 6.8pt !important; }
+    .id-val     { font-size: 6.8pt !important; }
+    .time-cell,
+    .date-cell,
+    .year-cell  { white-space: nowrap !important; font-size: 6.5pt !important; }
 
     /* Alternate row shading */
     .report-table tbody tr:nth-child(even) td {
@@ -316,11 +362,32 @@
         print-color-adjust: exact;
     }
 
-    /* Tag colors */
-    .course-tag  { background: #ebf4ff !important; color: #2b6cb0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .purpose-tag { background: #f0f3ff !important; color: #3b5bdb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .lab-tag     { background: #e6f4ea !important; color: #276749 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Compact tags */
+    .course-tag  {
+        background: #ebf4ff !important; color: #2b6cb0 !important;
+        padding: 1px 4px !important; font-size: 6pt !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .purpose-tag {
+        background: #f0f3ff !important; color: #3b5bdb !important;
+        padding: 1px 4px !important; font-size: 6pt !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .lab-tag {
+        background: #e6f4ea !important; color: #276749 !important;
+        padding: 1px 4px !important; font-size: 6pt !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+
+    /* PC badge */
+    .report-table td span[style] {
+        font-size: 6pt !important;
+        padding: 1px 4px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 }
+
 /* ── Footer ───────────────────────────────────────────── */
 .report-footer {
     padding: 11px 18px;

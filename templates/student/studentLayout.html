@@ -34,6 +34,9 @@
         <a href="{{ url_for('reservation') }}" class="nav-link {% if request.endpoint == 'reservation' %}active{% endif %}">
             <i class="fa-solid fa-calendar-check"></i><span>Reservation</span>
         </a>
+            <a href="{{ url_for('student_software') }}" class="nav-link {% if request.endpoint == 'student_software' %}active{% endif %}">
+        <i class="fa-solid fa-laptop"></i><span>Lab Software</span>
+    </a>
     </nav>
 
     <div class="topnav-user">
@@ -79,6 +82,9 @@
     </a>
     <a href="{{ url_for('reservation') }}" class="nav-link {% if request.endpoint == 'reservation' %}active{% endif %}">
         <i class="fa-solid fa-calendar-check"></i> Reservation
+    </a>
+    <a href="{{ url_for('student_software') }}" class="nav-link {% if request.endpoint == 'student_software' %}active{% endif %}">
+        <i class="fa-solid fa-laptop"></i> Lab Software
     </a>
     <a href="{{ url_for('logout') }}" class="nav-link logout-mobile">
         <i class="fa-solid fa-right-from-bracket"></i> Logout

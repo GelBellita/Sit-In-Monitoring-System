@@ -1,10 +1,8 @@
-// ── home.js — Admin Dashboard Home Page Scripts
-// Place in: static/js/home.js
+// ── home.js — Leaderboard Score Breakdown Modal
 
 (function () {
-    const HOURS_PER_SESSION = 2;   // expected max hours per session
+    const HOURS_PER_SESSION = 2;
 
-    /* ── helpers ── */
     function qs(id)      { return document.getElementById(id); }
     function set(id, v)  { const e = qs(id); if (e) e.textContent = v; }
     function html(id, v) { const e = qs(id); if (e) e.innerHTML   = v; }
@@ -22,133 +20,117 @@
                 </div>`;
     }
 
-    /* ── modal open/close ── */
-    const overlay = qs('bdOverlay');
-    if (!overlay) return;
-
-    qs('bdClose').addEventListener('click', close);
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-
-    function close() {
-        overlay.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-
-    function open(d, rank) {
-        /* Header */
-        const initials = (d.firstName[0] + d.lastName[0]).toUpperCase();
-        set('bdAvatar', initials);
-        set('bdName',   d.lastName + ', ' + d.firstName);
-        set('bdMeta',   d.course + ' · ' + d.yearLevel);
-
-        /* Hero */
-        set('bdScoreNum', d.composite);
-        const medals = ['🥇', '🥈', '🥉'];
-        qs('bdRankChip').textContent = rank <= 3
-            ? medals[rank - 1] + ' Rank #' + rank
-            : 'Rank #' + rank;
-
-        const sessions    = parseInt(d.total_sessions)     || 0;
-        const starTotal   = parseInt(d.total_admin_rating) || 0;
-        const minutes     = parseInt(d.total_minutes)      || 0;
-        const tasksDone   = parseInt(d.tasks_done)         || 0;
-        const hoursLogged = (minutes / 60).toFixed(1);
-
-        /* ── Recalculate hours norm based on sessions × 2 hrs ── */
-        const expectedHours = sessions * HOURS_PER_SESSION;
-        const actualHours   = minutes / 60;
-        const hoursNorm     = expectedHours > 0
-            ? Math.min(100, (actualHours / expectedHours) * 100)
-            : 0;
-
-        const ratingNorm = parseFloat(d.rating_norm);
-        const taskRate   = parseFloat(d.task_rate);
-
-        const ratingW = (ratingNorm * 0.50).toFixed(2);
-        const hoursW  = (hoursNorm  * 0.30).toFixed(2);
-        const taskW   = (taskRate   * 0.20).toFixed(2);
-
-        // Recompute composite with new hours formula
-        const composite = (parseFloat(ratingW) + parseFloat(hoursW) + parseFloat(taskW)).toFixed(1);
-
-        /* Update formula display */
-        const formulaEl = document.querySelector('.bd-formula');
-        if (formulaEl) {
-            formulaEl.innerHTML = `Score = <strong>(Admin Stars ÷ 3) × 50%</strong>
-              &nbsp;+&nbsp; <strong>(Actual Hrs ÷ Expected Hrs × 100) × 30%</strong>
-              &nbsp;+&nbsp; <strong>Task Rate × 20%</strong>`;
+    function init() {
+        const overlay = qs('bdOverlay');
+        if (!overlay) {
+            console.warn('bdOverlay not found — modal will not work');
+            return;
         }
 
-        /* ── ① Admin Rating ── */
-        html('bdRatingSteps',
-            step('Admin stars earned across all ' + sessions + ' session' + (sessions !== 1 ? 's' : ''),
-                 starTotal + '★') +
-            step('Convert to points <em>(' + starTotal + ' stars ÷ 3)</em>',
-                 ratingNorm.toFixed(2) + ' pts') +
-            step('Apply 50% weight <em>(' + ratingNorm.toFixed(2) + ' × 0.50)</em>',
-                 '+' + ratingW + ' pts', true)
-        );
-        set('bdRatingPts', '+' + ratingW);
-        setBar('bdRatingBar', ratingNorm * 100 / 3);
+        function closeModal() {
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
 
-        /* ── ② Hours ── */
-        const cappedNote = hoursNorm >= 100
-            ? '✓ Full attendance!'
-            : parseFloat(hoursLogged).toFixed(1) + ' of ' + expectedHours.toFixed(1) + ' expected hrs';
-        html('bdHoursSteps',
-            step('Total time logged across all sessions',
-                 hoursLogged + ' hrs (' + minutes + ' min)') +
-            step('Expected hours <em>(' + sessions + ' sessions × ' + HOURS_PER_SESSION + ' hrs)</em>',
-                 expectedHours.toFixed(1) + ' hrs expected') +
-            step('Attendance rate <em>(' + hoursLogged + ' ÷ ' + expectedHours.toFixed(1) + ') × 100, capped at 100</em>',
-                 hoursNorm.toFixed(1) + ' / 100 <em style="color:#94a3b8">(' + cappedNote + ')</em>') +
-            step('Apply 30% weight <em>(' + hoursNorm.toFixed(1) + ' × 0.30)</em>',
-                 '+' + hoursW + ' pts', true)
-        );
-        set('bdHoursPts', '+' + hoursW);
-        setBar('bdHoursBar', hoursNorm);
+        qs('bdClose').addEventListener('click', closeModal);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
-        /* ── ③ Task Completion ── */
-        html('bdTaskSteps',
-            step('Sessions where task was marked complete',
-                 tasksDone + ' out of ' + sessions + ' session' + (sessions !== 1 ? 's' : '')) +
-            step('Completion rate <em>(' + tasksDone + ' ÷ ' + sessions + ') × 100</em>',
-                 taskRate.toFixed(1) + '%') +
-            step('Apply 20% weight <em>(' + taskRate.toFixed(1) + ' × 0.20)</em>',
-                 '+' + taskW + ' pts', true)
-        );
-        set('bdTaskPts', '+' + taskW);
-        setBar('bdTaskBar', taskRate);
+        function openModal(d, rank) {
+            const sessions  = parseInt(d.total_sessions)     || 0;
+            const starTotal = parseInt(d.total_admin_rating) || 0;
+            const minutes   = parseInt(d.total_minutes)      || 0;
+            const tasksDone = parseInt(d.tasks_done)         || 0;
 
-        /* ── Final sum ── */
-        html('bdSumEq',
-            ratingW + ' <span>+</span> ' +
-            hoursW  + ' <span>+</span> ' +
-            taskW   + ' <span>=</span>');
-        set('bdSumTotal', composite);
+            const actualHours   = minutes / 60;
+            const expectedHours = sessions * HOURS_PER_SESSION;
+            const maxStars      = sessions * 3;
 
-        /* ── Stats strip ── */
-        set('bdStatSessions', sessions);
-        set('bdStatHours',    hoursLogged + 'h');
-        set('bdStatTasks',    tasksDone);
-        set('bdStatRating',   starTotal + '★');
+            const ratingNorm = maxStars > 0      ? Math.min(100, (starTotal / maxStars) * 100)         : 0;
+            const hoursNorm  = expectedHours > 0 ? Math.min(100, (actualHours / expectedHours) * 100)  : 0;
+            const taskRate   = sessions > 0      ? (tasksDone / sessions) * 100                        : 0;
 
-        overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+            const ratingW   = (ratingNorm * 0.50).toFixed(2);
+            const hoursW    = (hoursNorm  * 0.30).toFixed(2);
+            const taskW     = (taskRate   * 0.20).toFixed(2);
+            const composite = (parseFloat(ratingW) + parseFloat(hoursW) + parseFloat(taskW)).toFixed(1);
+
+            /* Header */
+            set('bdAvatar', (d.firstName[0] + d.lastName[0]).toUpperCase());
+            set('bdName',   d.lastName + ', ' + d.firstName);
+            set('bdMeta',   d.course + ' · ' + d.yearLevel);
+
+            /* Hero */
+            set('bdScoreNum', composite);
+            const medals = ['🥇', '🥈', '🥉'];
+            qs('bdRankChip').textContent = rank <= 3 ? medals[rank - 1] + ' Rank #' + rank : 'Rank #' + rank;
+
+            /* ① Admin Rating — 50% */
+            html('bdRatingSteps',
+                step('Admin stars earned across ' + sessions + ' session' + (sessions !== 1 ? 's' : ''), starTotal + '★') +
+                step('Max possible stars <em>(' + sessions + ' sessions × 3 stars)</em>', maxStars + '★ max') +
+                step('Rating score <em>(' + starTotal + ' ÷ ' + maxStars + ') × 100, capped at 100</em>', ratingNorm.toFixed(1) + ' / 100') +
+                step('Apply 50% weight <em>(' + ratingNorm.toFixed(1) + ' × 0.50)</em>', '+' + ratingW + ' pts', true)
+            );
+            set('bdRatingPts', '+' + ratingW);
+            setBar('bdRatingBar', ratingNorm);
+
+            /* ② Hours — 30% */
+            const hoursLogged = actualHours.toFixed(1);
+            const cappedNote  = hoursNorm >= 100
+                ? '✓ Full attendance!'
+                : hoursLogged + ' of ' + expectedHours.toFixed(1) + ' expected hrs';
+            html('bdHoursSteps',
+                step('Total time logged', hoursLogged + ' hrs (' + minutes + ' min)') +
+                step('Expected hours <em>(' + sessions + ' sessions × ' + HOURS_PER_SESSION + ' hrs)</em>', expectedHours.toFixed(1) + ' hrs') +
+                step('Session rate, capped at 100 <em>(' + hoursLogged + ' ÷ ' + expectedHours.toFixed(1) + ' × 100)</em>', '<em style="color:#94a3b8">' + cappedNote + '</em>') +
+                step('Apply 30% weight <em>(' + hoursNorm.toFixed(1) + ' × 0.30)</em>', '+' + hoursW + ' pts', true)
+            );
+            set('bdHoursPts', '+' + hoursW);
+            setBar('bdHoursBar', hoursNorm);
+
+            /* ③ Task Completion — 20% */
+            html('bdTaskSteps',
+                step('Sessions with task marked complete', tasksDone + ' of ' + sessions + ' session' + (sessions !== 1 ? 's' : '')) +
+                step('Completion rate <em>(' + tasksDone + ' ÷ ' + sessions + ' × 100)</em>', taskRate.toFixed(1) + '%') +
+                step('Apply 20% weight <em>(' + taskRate.toFixed(1) + ' × 0.20)</em>', '+' + taskW + ' pts', true)
+            );
+            set('bdTaskPts', '+' + taskW);
+            setBar('bdTaskBar', taskRate);
+
+            /* Final sum */
+            html('bdSumEq', ratingW + ' <span>+</span> ' + hoursW + ' <span>+</span> ' + taskW + ' <span>=</span>');
+            set('bdSumTotal', composite);
+
+            /* Stats strip */
+            set('bdStatSessions', sessions);
+            set('bdStatHours',    hoursLogged + 'h');
+            set('bdStatTasks',    tasksDone);
+            set('bdStatRating',   starTotal + '★');
+
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        /* Attach click to every leaderboard row on any page */
+        document.querySelectorAll('.lb-table tbody tr[data-student], .landing-lb-table tbody tr[data-student]').forEach(function (row) {
+            row.addEventListener('click', function () {
+                try {
+                    const d    = JSON.parse(this.dataset.student);
+                    const rank = parseInt(this.dataset.rank) || 99;
+                    openModal(d, rank);
+                } catch (err) {
+                    console.error('Breakdown parse error:', err, this.dataset.student);
+                }
+            });
+        });
     }
 
-    /* ── Attach click to every leaderboard row ── */
-    document.querySelectorAll('.lb-table tbody tr[data-student]').forEach(function (row) {
-        row.addEventListener('click', function () {
-            try {
-                const d    = JSON.parse(this.dataset.student);
-                const rank = parseInt(this.dataset.rank) || 99;
-                open(d, rank);
-            } catch (err) {
-                console.error('Breakdown parse error', err);
-            }
-        });
-    });
+    /* Run after DOM is fully ready */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 
 })();

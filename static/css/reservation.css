@@ -634,6 +634,29 @@
     padding: 1px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;
 }
 
+/* ── Cancel Reservation Button — add to reservation.css ── */
+.btn-cancel-resv {
+    width: 100%;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.btn-cancel-resv:hover {
+    background: rgba(239, 68, 68, 0.28);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fff;
+}
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
     .resv-root { grid-template-columns: 260px 1fr; }

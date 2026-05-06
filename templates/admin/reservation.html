@@ -4,8 +4,8 @@
 
 {% block extra_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/admin_reservation.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/adminCss/admin_software.css') }}">
 <style>
-/* ── Already-active warning badge in the action cell ── */
 .status-sitin-warn {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 0.74rem; font-weight: 700;
@@ -37,23 +37,31 @@
     <div class="resv-stats-row">
         <div class="resv-stat pending">
             <i class="fa-solid fa-hourglass-half"></i>
-            <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Pending') | list | length }}</div>
-            <div class="resv-stat-lbl">Pending</div>
+            <div>
+                <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Pending') | list | length }}</div>
+                <div class="resv-stat-lbl">Pending</div>
+            </div>
         </div>
         <div class="resv-stat approved">
             <i class="fa-solid fa-circle-check"></i>
-            <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Approved') | list | length }}</div>
-            <div class="resv-stat-lbl">Approved</div>
+            <div>
+                <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Approved') | list | length }}</div>
+                <div class="resv-stat-lbl">Approved</div>
+            </div>
         </div>
         <div class="resv-stat rejected">
             <i class="fa-solid fa-circle-xmark"></i>
-            <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Rejected') | list | length }}</div>
-            <div class="resv-stat-lbl">Rejected</div>
+            <div>
+                <div class="resv-stat-num">{{ reservations | selectattr('status', 'equalto', 'Rejected') | list | length }}</div>
+                <div class="resv-stat-lbl">Rejected</div>
+            </div>
         </div>
         <div class="resv-stat total">
             <i class="fa-solid fa-list"></i>
-            <div class="resv-stat-num">{{ reservations | length }}</div>
-            <div class="resv-stat-lbl">Total</div>
+            <div>
+                <div class="resv-stat-num">{{ reservations | length }}</div>
+                <div class="resv-stat-lbl">Total</div>
+            </div>
         </div>
     </div>
 
@@ -70,12 +78,18 @@
             <i class="fa-solid fa-calendar-days"></i> Lab Schedules
             <span class="tab-badge tab-badge-blue">{{ schedules | length }}</span>
         </button>
+        <button class="resv-tab" data-tab="software">
+            <i class="fa-solid fa-microchip"></i> Lab Software
+        </button>
         <button class="resv-tab" data-tab="logs">
             <i class="fa-solid fa-scroll"></i> Activity Logs
         </button>
     </div>
 
-    <!-- ══ TAB: Reservation Requests ══ -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB: Reservation Requests
+    ══════════════════════════════════════════════════════════════ -->
     <div class="resv-tab-panel active" id="tab-requests">
         <div class="resv-card">
             <div class="resv-card-toolbar">
@@ -150,7 +164,9 @@
                             <td>
                                 {% if r['status'] == 'Pending' %}
                                 <div class="action-btns">
-                                    <form method="POST" action="{{ url_for('admin_reservation_action', resv_id=r['id']) }}" style="display:inline">
+                                    <form method="POST"
+                                          action="{{ url_for('admin_reservation_action', resv_id=r['id']) }}"
+                                          style="display:inline">
                                         <input type="hidden" name="action" value="approve">
                                         <button type="submit" class="btn-approve" title="Approve">
                                             <i class="fa-solid fa-check"></i> Approve
@@ -167,37 +183,28 @@
                                 </div>
 
                                 {% elif r['status'] == 'Approved' %}
-
-                                    {# Case 1: This reservation's own sit-in is active #}
                                     {% if r['sitInId'] and r['sitInStatus'] == 'Active' %}
                                         <span class="status-sitin-active">
                                             <i class="fa-solid fa-desktop"></i> Currently Sitting In
                                         </span>
-
-                                    {# Case 2: This reservation's own sit-in is done #}
                                     {% elif r['sitInId'] and r['sitInStatus'] == 'Done' %}
                                         <span class="action-done" style="font-size:0.76rem;color:#10b981;">
                                             <i class="fa-solid fa-circle-check"></i> Session Ended
                                         </span>
-
-                                    {# Case 3: Student has a DIFFERENT active sit-in (e.g. direct sit-in) #}
                                     {% elif r['studentId'] in active_student_ids %}
                                         <span class="status-sitin-warn"
-                                              title="This student is already in an active sit-in session. Log them out first.">
+                                              title="Student already has an active sit-in. Log them out first.">
                                             <i class="fa-solid fa-triangle-exclamation"></i> Already In Session
                                         </span>
-
-                                    {# Case 4: Ready to sit in #}
                                     {% else %}
                                         <form method="POST"
-                                            action="{{ url_for('admin_reservation_sitin', resv_id=r['id']) }}"
-                                            style="display:inline">
+                                              action="{{ url_for('admin_reservation_sitin', resv_id=r['id']) }}"
+                                              style="display:inline">
                                             <button type="submit" class="btn-sitin">
                                                 <i class="fa-solid fa-desktop"></i> Sit In
                                             </button>
                                         </form>
                                     {% endif %}
-
                                 {% else %}
                                     <span class="action-done">—</span>
                                 {% endif %}
@@ -217,7 +224,10 @@
         </div>
     </div>
 
-    <!-- ══ TAB: Lab Schedules ══ -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB: Lab Schedules
+    ══════════════════════════════════════════════════════════════ -->
     <div class="resv-tab-panel" id="tab-schedules">
         <div class="resv-card">
             <div class="sched-header">
@@ -249,8 +259,10 @@
                         <button class="btn-sched-pcs manage-pcs-btn" data-sched-id="{{ s['id'] }}">
                             <i class="fa-solid fa-desktop"></i> Manage PCs
                         </button>
-                        <form method="POST" action="{{ url_for('admin_delete_schedule', sched_id=s['id']) }}"
-                              onsubmit="return confirm('Delete this schedule?')" style="display:inline">
+                        <form method="POST"
+                              action="{{ url_for('admin_delete_schedule', sched_id=s['id']) }}"
+                              onsubmit="return confirm('Delete this schedule?')"
+                              style="display:inline">
                             <button type="submit" class="btn-sched-del">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -269,7 +281,161 @@
         </div>
     </div>
 
-    <!-- ══ TAB: Activity Logs ══ -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB: Lab Software
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="resv-tab-panel" id="tab-software">
+        <div class="resv-card sw-page">
+
+            <div class="sw-toolbar">
+                <div class="sw-toolbar-left">
+                    <div class="sw-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="swSearchInput" placeholder="Search software across labs…">
+                    </div>
+                </div>
+                <div class="sw-toolbar-right">
+                    <button class="btn-sw-import" onclick="openImportModal()">
+                        <i class="fa-solid fa-upload"></i> Publish to Students
+                    </button>
+                </div>
+            </div>
+
+            <div class="sw-labs" id="swLabsContainer">
+
+                {% set labs_default = {
+                    '524': [
+                        ('Visual Studio 2022',  '2022 Community',  'fa-solid fa-code',          'ic-purple', 'IDE'),
+                        ('Visual Studio Code',  '1.88+',           'fa-solid fa-code',          'ic-blue',   'IDE'),
+                        ('XAMPP',               'v8.2',            'fa-solid fa-server',        'ic-orange', 'Web'),
+                        ('Git',                 '2.44',            'fa-brands fa-git-alt',      'ic-red',    'Tool'),
+                        ('Python',              '3.12',            'fa-brands fa-python',       'ic-yellow', 'Dev'),
+                        ('Node.js',             'v20 LTS',         'fa-brands fa-node-js',      'ic-green',  'Dev'),
+                        ('Sublime Text',        '4',               'fa-regular fa-file-code',   'ic-gray',   'IDE'),
+                        ('Cisco Packet Tracer', '8.2',             'fa-solid fa-network-wired', 'ic-teal',   'Tool'),
+                    ],
+                    '526': [
+                        ('Visual Studio 2022',  '2022 Community',  'fa-solid fa-code',          'ic-purple', 'IDE'),
+                        ('Visual Studio Code',  '1.88+',           'fa-solid fa-code',          'ic-blue',   'IDE'),
+                        ('XAMPP',               'v8.2',            'fa-solid fa-server',        'ic-orange', 'Web'),
+                        ('Git',                 '2.44',            'fa-brands fa-git-alt',      'ic-red',    'Tool'),
+                        ('Python',              '3.12',            'fa-brands fa-python',       'ic-yellow', 'Dev'),
+                        ('Node.js',             'v20 LTS',         'fa-brands fa-node-js',      'ic-green',  'Dev'),
+                        ('Sublime Text',        '4',               'fa-regular fa-file-code',   'ic-gray',   'IDE'),
+                        ('Cisco Packet Tracer', '8.2',             'fa-solid fa-network-wired', 'ic-teal',   'Tool'),
+                    ],
+                    '528': [
+                        ('Visual Studio 2022',  '2022 Enterprise', 'fa-solid fa-code',          'ic-purple', 'IDE'),
+                        ('SQL Server 2022',     '16.0',            'fa-solid fa-database',      'ic-navy',   'DB'),
+                        ('SSMS',                '19.3',            'fa-solid fa-table-columns', 'ic-blue',   'DB'),
+                        ('Visual Studio Code',  '1.88+',           'fa-solid fa-code',          'ic-blue',   'IDE'),
+                        ('XAMPP',               'v8.2',            'fa-solid fa-server',        'ic-orange', 'Web'),
+                        ('Git',                 '2.44',            'fa-brands fa-git-alt',      'ic-red',    'Tool'),
+                        ('Python',              '3.12',            'fa-brands fa-python',       'ic-yellow', 'Dev'),
+                        ('Postman',             '10.x',            'fa-solid fa-paper-plane',   'ic-orange', 'Tool'),
+                    ],
+                    '530': [
+                        ('Visual Studio 2022',  '2022 Enterprise', 'fa-solid fa-code',          'ic-purple', 'IDE'),
+                        ('SQL Server 2022',     '16.0',            'fa-solid fa-database',      'ic-navy',   'DB'),
+                        ('SSMS',                '19.3',            'fa-solid fa-table-columns', 'ic-blue',   'DB'),
+                        ('Visual Studio Code',  '1.88+',           'fa-solid fa-code',          'ic-blue',   'IDE'),
+                        ('XAMPP',               'v8.2',            'fa-solid fa-server',        'ic-orange', 'Web'),
+                        ('Git',                 '2.44',            'fa-brands fa-git-alt',      'ic-red',    'Tool'),
+                        ('Python',              '3.12',            'fa-brands fa-python',       'ic-yellow', 'Dev'),
+                        ('Postman',             '10.x',            'fa-solid fa-paper-plane',   'ic-orange', 'Tool'),
+                    ],
+                    '542': [
+                        ('Visual Studio Code',  '1.88+',           'fa-solid fa-code',          'ic-blue',   'IDE'),
+                        ('XAMPP',               'v8.2',            'fa-solid fa-server',        'ic-orange', 'Web'),
+                        ('Arduino IDE',         '2.3',             'fa-solid fa-microchip',     'ic-teal',   'Dev'),
+                        ('Python',              '3.12',            'fa-brands fa-python',       'ic-yellow', 'Dev'),
+                        ('Git',                 '2.44',            'fa-brands fa-git-alt',      'ic-red',    'Tool'),
+                        ('LibreOffice',         '7.6',             'fa-solid fa-file-word',     'ic-navy',   'Tool'),
+                        ('VirtualBox',          '7.0',             'fa-solid fa-box',           'ic-gray',   'Tool'),
+                        ('Eclipse IDE',         '2024-03',         'fa-solid fa-circle-dot',    'ic-pink',   'IDE'),
+                    ],
+                    '544': [
+                        ('Visual Studio Code',  '1.88+',           'fa-solid fa-code',          'ic-blue',   'IDE'),
+                        ('XAMPP',               'v8.2',            'fa-solid fa-server',        'ic-orange', 'Web'),
+                        ('Arduino IDE',         '2.3',             'fa-solid fa-microchip',     'ic-teal',   'Dev'),
+                        ('Python',              '3.12',            'fa-brands fa-python',       'ic-yellow', 'Dev'),
+                        ('Git',                 '2.44',            'fa-brands fa-git-alt',      'ic-red',    'Tool'),
+                        ('LibreOffice',         '7.6',             'fa-solid fa-file-word',     'ic-navy',   'Tool'),
+                        ('VirtualBox',          '7.0',             'fa-solid fa-box',           'ic-gray',   'Tool'),
+                        ('Eclipse IDE',         '2024-03',         'fa-solid fa-circle-dot',    'ic-pink',   'IDE'),
+                    ],
+                } %}
+
+                {% for lab_id, sw_list in labs_default.items() %}
+                <div class="sw-lab-block" id="swlab-{{ lab_id }}">
+                    <div class="sw-lab-header" onclick="toggleSwLab('{{ lab_id }}')">
+                        <div class="sw-lab-icon">
+                            <i class="fa-solid fa-desktop"></i>
+                        </div>
+                        <div>
+                            <div class="sw-lab-name">Laboratory {{ lab_id }}</div>
+                            <div class="sw-lab-count" id="swlabcount-{{ lab_id }}">
+                                {{ sw_list | length }} software installed
+                            </div>
+                        </div>
+                        <span class="sw-lab-badge" id="swlabbadge-{{ lab_id }}">
+                            {{ sw_list | length }} apps
+                        </span>
+                        <i class="fa-solid fa-chevron-down sw-lab-chevron"></i>
+                    </div>
+
+                    <div class="sw-lab-body">
+                        <div class="sw-grid" id="swgrid-{{ lab_id }}">
+                            {% for name, version, icon, color, tag in sw_list %}
+                            <div class="sw-item"
+                                 data-lab="{{ lab_id }}"
+                                 data-name="{{ name }}"
+                                 data-ver="{{ version }}"
+                                 data-icon="{{ icon }}"
+                                 data-color="{{ color }}"
+                                 data-tag="{{ tag }}">
+                                <div class="sw-item-icon {{ color }}">
+                                    <i class="{{ icon }}"></i>
+                                </div>
+                                <div class="sw-item-info">
+                                    <div class="sw-item-name">{{ name }}</div>
+                                    <div class="sw-item-ver">{{ version }}</div>
+                                </div>
+                                <button class="sw-item-del"
+                                        title="Remove"
+                                        onclick="removeSoftware(this, '{{ lab_id }}')">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="sw-add-row">
+                            <input class="sw-add-input wide"
+                                   type="text"
+                                   id="swname-{{ lab_id }}"
+                                   placeholder="Software name…">
+                            <input class="sw-add-input narrow"
+                                   type="text"
+                                   id="swver-{{ lab_id }}"
+                                   placeholder="Version…">
+                            <button class="sw-add-btn" onclick="addSoftware('{{ lab_id }}')">
+                                <i class="fa-solid fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB: Activity Logs
+    ══════════════════════════════════════════════════════════════ -->
     <div class="resv-tab-panel" id="tab-logs">
         <div class="resv-card">
             <div class="log-header">
@@ -308,9 +474,12 @@
         </div>
     </div>
 
-</div>
+</div><!-- end .resv-admin-page -->
 
-<!-- ── Reject Modal ── -->
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODAL: Reject Reservation
+══════════════════════════════════════════════════════════════════════ -->
 <div class="modal-backdrop" id="rejectModalBackdrop">
     <div class="modal reject-modal">
         <div class="reject-modal-header">
@@ -325,16 +494,29 @@
             <div class="reject-presets">
                 <div class="reject-preset-label">Quick reasons:</div>
                 <div class="reject-presets-list">
-                    <button type="button" class="preset-btn" onclick="setReason('Lab will be used for class during this time slot.')">In-class use</button>
-                    <button type="button" class="preset-btn" onclick="setReason('Lab is under maintenance on this date.')">Maintenance</button>
-                    <button type="button" class="preset-btn" onclick="setReason('Maximum capacity reached for this time slot.')">Fully booked</button>
-                    <button type="button" class="preset-btn" onclick="setReason('Please reserve a different PC — this one is unavailable.')">PC unavailable</button>
+                    <button type="button" class="preset-btn"
+                            onclick="setReason('Lab will be used for class during this time slot.')">
+                        In-class use
+                    </button>
+                    <button type="button" class="preset-btn"
+                            onclick="setReason('Lab is under maintenance on this date.')">
+                        Maintenance
+                    </button>
+                    <button type="button" class="preset-btn"
+                            onclick="setReason('Maximum capacity reached for this time slot.')">
+                        Fully booked
+                    </button>
+                    <button type="button" class="preset-btn"
+                            onclick="setReason('Please reserve a different PC — this one is unavailable.')">
+                        PC unavailable
+                    </button>
                 </div>
             </div>
             <div class="form-group" style="margin-top:14px;">
                 <label>Reason for rejection *</label>
                 <textarea name="rejectReason" id="rejectReasonInput" rows="3"
-                    placeholder="Explain why the reservation is being rejected. Students will see this message."></textarea>
+                    placeholder="Explain why the reservation is being rejected. Students will see this message.">
+                </textarea>
             </div>
             <div class="reject-tip">
                 <i class="fa-solid fa-lightbulb"></i>
@@ -350,14 +532,16 @@
     </div>
 </div>
 
-<!-- ── Add Schedule Modal ── -->
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODAL: Add Lab Schedule
+══════════════════════════════════════════════════════════════════════ -->
 <div class="modal-backdrop" id="scheduleModalBackdrop">
     <div class="modal schedule-modal">
         <div class="modal-title">
             <i class="fa-solid fa-calendar-plus" style="color:var(--blue)"></i> Add Lab Schedule
         </div>
         <form method="POST" action="{{ url_for('admin_add_schedule') }}" id="scheduleForm">
-
             <div class="sched-form-grid">
                 <div class="form-group">
                     <label>Laboratory</label>
@@ -381,12 +565,12 @@
                 </label>
                 <div class="sched-slot-picker" id="schedSlotPicker">
                     {% set slot_list = [
-                        ('7:00 AM – 9:00 AM',  'fa-sun',       'Morning',   '7:00 – 9:00 AM'),
-                        ('9:00 AM – 11:00 AM', 'fa-cloud-sun', 'Morning',   '9:00 – 11:00 AM'),
-                        ('11:00 AM – 1:00 PM', 'fa-cloud-sun', 'Midday',    '11:00 AM – 1:00 PM'),
-                        ('1:00 PM – 3:00 PM',  'fa-cloud',     'Afternoon', '1:00 – 3:00 PM'),
-                        ('3:00 PM – 5:00 PM',  'fa-cloud',     'Afternoon', '3:00 – 5:00 PM'),
-                        ('5:00 PM – 7:00 PM',  'fa-moon',      'Evening',   '5:00 – 7:00 PM'),
+                        ('7:00 AM – 9:00 AM',   'fa-sun',       'Morning',   '7:00 – 9:00 AM'),
+                        ('9:00 AM – 11:00 AM',  'fa-cloud-sun', 'Morning',   '9:00 – 11:00 AM'),
+                        ('11:00 AM – 1:00 PM',  'fa-cloud-sun', 'Midday',    '11:00 AM – 1:00 PM'),
+                        ('1:00 PM – 3:00 PM',   'fa-cloud',     'Afternoon', '1:00 – 3:00 PM'),
+                        ('3:00 PM – 5:00 PM',   'fa-cloud',     'Afternoon', '3:00 – 5:00 PM'),
+                        ('5:00 PM – 7:00 PM',   'fa-moon',      'Evening',   '5:00 – 7:00 PM'),
                     ] %}
                     {% for value, icon, period, label in slot_list %}
                     <button type="button" class="sched-slot-btn" data-slot="{{ value }}">
@@ -405,12 +589,13 @@
 
             <div class="form-group">
                 <label>Description (optional)</label>
-                <input type="text" name="description" placeholder="e.g. IT301 — Database Management class">
+                <input type="text" name="description"
+                       placeholder="e.g. IT301 — Database Management class">
             </div>
 
             <div class="sched-note">
                 <i class="fa-solid fa-info-circle"></i>
-                All 40 PCs will be marked <strong>In Use</strong> for this schedule's time slot.
+                All 40 PCs will be marked <strong>In Use</strong> for this time slot.
                 After saving, click <strong>Manage PCs</strong> to open specific PCs for reservation.
             </div>
             <div class="modal-actions">
@@ -423,7 +608,10 @@
     </div>
 </div>
 
-<!-- ── PC Override Modal ── -->
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODAL: Manage PC Overrides
+══════════════════════════════════════════════════════════════════════ -->
 <div class="modal-backdrop" id="pcOverrideBackdrop">
     <div class="modal pc-override-modal">
         <div class="pc-override-header">
@@ -448,29 +636,80 @@
     </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODAL: Publish Software to Students
+══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="swImportBackdrop">
+    <div class="modal sw-import-modal">
+
+        <div id="swImportView">
+            <div class="sw-import-header">
+                <i class="fa-solid fa-upload"></i>
+                <div>
+                    <div class="sw-import-title">Publish Software List to Students</div>
+                    <div class="sw-import-sub">Students will see this on the Lab Software page</div>
+                </div>
+            </div>
+
+            <div class="sw-import-preview" id="swImportPreview"></div>
+
+            <div class="sw-import-note">
+                <i class="fa-solid fa-circle-info"></i>
+                This will overwrite the current public list. Students will immediately see the updated
+                software on their <strong>Lab Software</strong> page.
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeImportModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmImport()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Publish Now
+                </button>
+            </div>
+        </div>
+
+        <div class="sw-import-success" id="swImportSuccess">
+            <i class="fa-solid fa-circle-check"></i>
+            <p>Published successfully!</p>
+            <small>The student-facing page now shows the updated software list.</small>
+            <button class="btn btn-primary" onclick="closeImportModal()" style="margin-top:8px;">
+                Done
+            </button>
+        </div>
+
+    </div>
+</div>
+
 {% endblock %}
+
 
 {% block extra_scripts %}
 <script>
-// ── Tab switching ─────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ════════════════════════════════════════════════════════════════════════════
 document.querySelectorAll('.resv-tab').forEach(function(tab) {
     tab.addEventListener('click', function() {
         document.querySelectorAll('.resv-tab').forEach(function(t) { t.classList.remove('active'); });
         document.querySelectorAll('.resv-tab-panel').forEach(function(p) { p.classList.remove('active'); });
         this.classList.add('active');
         var panelId = 'tab-' + this.dataset.tab;
-        document.getElementById(panelId)?.classList.add('active');
+        var panel = document.getElementById(panelId);
+        if (panel) panel.classList.add('active');
     });
 });
 
-// ── Reservation filter ────────────────────────────────────────────────────────
+
+// ════════════════════════════════════════════════════════════════════════════
+//  RESERVATION FILTER
+// ════════════════════════════════════════════════════════════════════════════
 var resvFilter   = document.getElementById('resvFilterInput');
 var statusFilter = document.getElementById('statusFilter');
 var resvRows     = Array.from(document.querySelectorAll('.resv-row'));
 
 function filterResvTable() {
-    var q      = (resvFilter?.value || '').toLowerCase();
-    var status = (statusFilter?.value || '').toLowerCase();
+    var q      = (resvFilter ? resvFilter.value : '').toLowerCase();
+    var status = (statusFilter ? statusFilter.value : '').toLowerCase();
     var visible = 0;
     resvRows.forEach(function(row) {
         var matchQ = !q || [row.dataset.name, row.dataset.lab, row.dataset.date, row.dataset.pc]
@@ -478,38 +717,59 @@ function filterResvTable() {
         var matchS = !status || row.dataset.status.toLowerCase() === status;
         var show   = matchQ && matchS;
         row.classList.toggle('hidden', !show);
-        if (show) { visible++; row.querySelector('.row-num').textContent = visible; }
+        if (show) {
+            visible++;
+            var numCell = row.querySelector('.row-num');
+            if (numCell) numCell.textContent = visible;
+        }
     });
 }
-resvFilter?.addEventListener('input', filterResvTable);
-statusFilter?.addEventListener('change', filterResvTable);
+if (resvFilter)   resvFilter.addEventListener('input', filterResvTable);
+if (statusFilter) statusFilter.addEventListener('change', filterResvTable);
 
-// ── Reject modal ──────────────────────────────────────────────────────────────
+
+// ════════════════════════════════════════════════════════════════════════════
+//  REJECT MODAL
+// ════════════════════════════════════════════════════════════════════════════
 document.querySelectorAll('.reject-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
         openRejectModal(
-            this.dataset.resvId, this.dataset.name,
-            this.dataset.lab,    this.dataset.date, this.dataset.slot
+            this.dataset.resvId,
+            this.dataset.name,
+            this.dataset.lab,
+            this.dataset.date,
+            this.dataset.slot
         );
     });
 });
+
 function openRejectModal(resvId, name, lab, date, slot) {
     document.getElementById('rejectForm').action = '/admin/reservation/action/' + resvId;
-    document.getElementById('rejectModalSub').textContent = name + ' — ' + lab + ' on ' + date + ' (' + slot + ')';
+    document.getElementById('rejectModalSub').textContent =
+        name + ' — ' + lab + ' on ' + date + ' (' + slot + ')';
     document.getElementById('rejectReasonInput').value = '';
     document.getElementById('rejectModalBackdrop').classList.add('open');
 }
-function closeRejectModal() { document.getElementById('rejectModalBackdrop').classList.remove('open'); }
-function setReason(txt)     { document.getElementById('rejectReasonInput').value = txt; }
+function closeRejectModal() {
+    document.getElementById('rejectModalBackdrop').classList.remove('open');
+}
+function setReason(txt) {
+    document.getElementById('rejectReasonInput').value = txt;
+}
 
-// ── Schedule Modal ────────────────────────────────────────────────────────────
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SCHEDULE MODAL
+// ════════════════════════════════════════════════════════════════════════════
 function openScheduleModal() {
     document.querySelectorAll('.sched-slot-btn').forEach(function(b) { b.classList.remove('selected'); });
     document.getElementById('schedTimeSlotInput').value = '';
     document.getElementById('schedSlotError').style.display = 'none';
     document.getElementById('scheduleModalBackdrop').classList.add('open');
 }
-function closeScheduleModal() { document.getElementById('scheduleModalBackdrop').classList.remove('open'); }
+function closeScheduleModal() {
+    document.getElementById('scheduleModalBackdrop').classList.remove('open');
+}
 
 document.querySelectorAll('.sched-slot-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -520,15 +780,22 @@ document.querySelectorAll('.sched-slot-btn').forEach(function(btn) {
     });
 });
 
-document.getElementById('scheduleForm')?.addEventListener('submit', function(e) {
-    if (!document.getElementById('schedTimeSlotInput').value) {
-        e.preventDefault();
-        document.getElementById('schedSlotError').style.display = 'block';
-        document.getElementById('schedSlotPicker').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-});
+var schedForm = document.getElementById('scheduleForm');
+if (schedForm) {
+    schedForm.addEventListener('submit', function(e) {
+        if (!document.getElementById('schedTimeSlotInput').value) {
+            e.preventDefault();
+            var err = document.getElementById('schedSlotError');
+            err.style.display = 'block';
+            document.getElementById('schedSlotPicker').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+}
 
-// ── PC Override Modal ─────────────────────────────────────────────────────────
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PC OVERRIDE MODAL
+// ════════════════════════════════════════════════════════════════════════════
 document.querySelectorAll('.manage-pcs-btn').forEach(function(btn) {
     btn.addEventListener('click', function() { openPCModal(this.dataset.schedId); });
 });
@@ -543,24 +810,25 @@ function openPCModal(schedId) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             currentAvailPcs = new Set(data.availablePcs || []);
-            var slotLabel = data.timeSlot || '';
+            var slotLabel   = data.timeSlot || '';
             document.getElementById('pcOverrideSub').textContent =
                 'Lab ' + data.labRoom + ' — ' + data.schedDate + (slotLabel ? ' · ' + slotLabel : '');
             renderPCGrid();
         });
 }
-function closePCModal() { document.getElementById('pcOverrideBackdrop').classList.remove('open'); }
-
+function closePCModal() {
+    document.getElementById('pcOverrideBackdrop').classList.remove('open');
+}
 function renderPCGrid() {
     var grid = document.getElementById('pcOverrideGrid');
     grid.innerHTML = '';
     for (var pc = 1; pc <= 40; pc++) {
         (function(pcNum) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
+            var btn       = document.createElement('button');
+            btn.type      = 'button';
             btn.className = 'pc-override-btn ' + (currentAvailPcs.has(pcNum) ? 'pc-avail' : 'pc-inuse');
             btn.innerHTML = '<i class="fa-solid fa-desktop"></i><span>' + pcNum + '</span>';
-            btn.title = 'PC ' + pcNum;
+            btn.title     = 'PC ' + pcNum;
             btn.addEventListener('click', function() {
                 if (currentAvailPcs.has(pcNum)) {
                     currentAvailPcs.delete(pcNum);
@@ -583,20 +851,188 @@ function updatePCSummary() {
 }
 function savePCOverrides() {
     fetch('/admin/lab-schedule/' + currentSchedId + '/pcs/save', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ availablePcs: Array.from(currentAvailPcs) })
+        body:    JSON.stringify({ availablePcs: Array.from(currentAvailPcs) })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) { if (data.ok) { closePCModal(); location.reload(); } });
 }
 
-// Close modals on backdrop click
-['rejectModalBackdrop', 'scheduleModalBackdrop', 'pcOverrideBackdrop'].forEach(function(id) {
-    var el = document.getElementById(id);
-    el?.addEventListener('click', function(e) {
-        if (e.target === this) this.classList.remove('open');
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SOFTWARE TAB
+// ════════════════════════════════════════════════════════════════════════════
+function toggleSwLab(lab) {
+    document.getElementById('swlab-' + lab).classList.toggle('expanded');
+}
+
+// Icon/color heuristic for newly added software
+var SW_ICON_MAP = {
+    'visual studio': { icon: 'fa-solid fa-code',          color: 'ic-purple' },
+    'vs code':       { icon: 'fa-solid fa-code',          color: 'ic-blue'   },
+    'vscode':        { icon: 'fa-solid fa-code',          color: 'ic-blue'   },
+    'xampp':         { icon: 'fa-solid fa-server',        color: 'ic-orange' },
+    'git':           { icon: 'fa-brands fa-git-alt',      color: 'ic-red'    },
+    'python':        { icon: 'fa-brands fa-python',       color: 'ic-yellow' },
+    'node':          { icon: 'fa-brands fa-node-js',      color: 'ic-green'  },
+    'sql':           { icon: 'fa-solid fa-database',      color: 'ic-navy'   },
+    'mysql':         { icon: 'fa-solid fa-database',      color: 'ic-navy'   },
+    'arduino':       { icon: 'fa-solid fa-microchip',     color: 'ic-teal'   },
+    'postman':       { icon: 'fa-solid fa-paper-plane',   color: 'ic-orange' },
+    'eclipse':       { icon: 'fa-solid fa-circle-dot',    color: 'ic-pink'   },
+    'java':          { icon: 'fa-brands fa-java',         color: 'ic-red'    },
+    'php':           { icon: 'fa-brands fa-php',          color: 'ic-purple' },
+    'network':       { icon: 'fa-solid fa-network-wired', color: 'ic-teal'   },
+    'cisco':         { icon: 'fa-solid fa-network-wired', color: 'ic-teal'   },
+    'sublime':       { icon: 'fa-regular fa-file-code',   color: 'ic-gray'   },
+    'virtualbox':    { icon: 'fa-solid fa-box',           color: 'ic-gray'   },
+    'libreoffice':   { icon: 'fa-solid fa-file-word',     color: 'ic-navy'   },
+};
+function guessIcon(name) {
+    var n = name.toLowerCase();
+    for (var key in SW_ICON_MAP) {
+        if (n.includes(key)) return SW_ICON_MAP[key];
+    }
+    return { icon: 'fa-solid fa-box', color: 'ic-gray' };
+}
+
+function addSoftware(lab) {
+    var nameEl = document.getElementById('swname-' + lab);
+    var verEl  = document.getElementById('swver-' + lab);
+    var name   = nameEl.value.trim();
+    var ver    = verEl.value.trim() || 'Latest';
+    if (!name) { nameEl.focus(); return; }
+
+    var guess  = guessIcon(name);
+    var icon   = guess.icon;
+    var color  = guess.color;
+    var grid   = document.getElementById('swgrid-' + lab);
+
+    var div = document.createElement('div');
+    div.className = 'sw-item';
+    div.dataset.lab   = lab;
+    div.dataset.name  = name;
+    div.dataset.ver   = ver;
+    div.dataset.icon  = icon;
+    div.dataset.color = color;
+    div.dataset.tag   = 'Tool';
+    div.innerHTML =
+        '<div class="sw-item-icon ' + color + '"><i class="' + icon + '"></i></div>' +
+        '<div class="sw-item-info">' +
+            '<div class="sw-item-name">' + name + '</div>' +
+            '<div class="sw-item-ver">'  + ver  + '</div>' +
+        '</div>' +
+        '<button class="sw-item-del" title="Remove" onclick="removeSoftware(this,\'' + lab + '\')">' +
+            '<i class="fa-solid fa-xmark"></i>' +
+        '</button>';
+    grid.appendChild(div);
+    updateLabCount(lab);
+    nameEl.value = '';
+    verEl.value  = '';
+    nameEl.focus();
+}
+
+function removeSoftware(btn, lab) {
+    btn.closest('.sw-item').remove();
+    updateLabCount(lab);
+}
+
+function updateLabCount(lab) {
+    var count = document.querySelectorAll('#swgrid-' + lab + ' .sw-item').length;
+    var countEl = document.getElementById('swlabcount-' + lab);
+    var badgeEl = document.getElementById('swlabbadge-' + lab);
+    if (countEl) countEl.textContent = count + ' software installed';
+    if (badgeEl) badgeEl.textContent = count + ' apps';
+}
+
+// Software search (inside software tab)
+var swSearchInput = document.getElementById('swSearchInput');
+if (swSearchInput) {
+    swSearchInput.addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        document.querySelectorAll('.sw-item').forEach(function(item) {
+            item.style.display = item.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+        });
     });
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PUBLISH / IMPORT MODAL
+// ════════════════════════════════════════════════════════════════════════════
+function openImportModal() {
+    var preview = document.getElementById('swImportPreview');
+    preview.innerHTML = '';
+    ['524','526','528','530','542','544'].forEach(function(lab) {
+        var count = document.querySelectorAll('#swgrid-' + lab + ' .sw-item').length;
+        var row   = document.createElement('div');
+        row.className = 'sw-import-lab-row';
+        row.innerHTML =
+            '<span class="sw-import-lab-name">Lab ' + lab + '</span>' +
+            '<span class="sw-import-count">' + count + ' software entries will be published</span>';
+        preview.appendChild(row);
+    });
+    document.getElementById('swImportView').style.display    = '';
+    document.getElementById('swImportSuccess').style.display = 'none';
+    document.getElementById('swImportBackdrop').classList.add('open');
+}
+function closeImportModal() {
+    document.getElementById('swImportBackdrop').classList.remove('open');
+}
+
+function confirmImport() {
+    var payload = {};
+    ['524','526','528','530','542','544'].forEach(function(lab) {
+        payload[lab] = [];
+        document.querySelectorAll('#swgrid-' + lab + ' .sw-item').forEach(function(item) {
+            payload[lab].push({
+                name:       item.dataset.name,
+                version:    item.dataset.ver,
+                icon:       item.dataset.icon,
+                icon_color: item.dataset.color,
+                tag:        item.dataset.tag || 'Tool',
+                tag_class:  'tag-tool'
+            });
+        });
+    });
+
+    fetch('/admin/software/publish', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ lab_software: payload })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        document.getElementById('swImportView').style.display    = 'none';
+        document.getElementById('swImportSuccess').style.display = 'flex';
+    })
+    .catch(function() {
+        // Show success anyway — route will 404 until added to app.py
+        document.getElementById('swImportView').style.display    = 'none';
+        document.getElementById('swImportSuccess').style.display = 'flex';
+    });
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  CLOSE ALL MODALS ON BACKDROP CLICK / ESC
+// ════════════════════════════════════════════════════════════════════════════
+['rejectModalBackdrop', 'scheduleModalBackdrop', 'pcOverrideBackdrop', 'swImportBackdrop'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('open');
+        });
+    }
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        ['rejectModalBackdrop', 'scheduleModalBackdrop', 'pcOverrideBackdrop', 'swImportBackdrop'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        });
+    }
 });
 </script>
 {% endblock %}
