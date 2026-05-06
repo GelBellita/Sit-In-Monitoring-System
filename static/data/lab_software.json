@@ -25,27 +25,11 @@
       "tag_class": "tag-tool"
     },
     {
-      "name": "Git",
-      "version": "2.44",
-      "icon": "fa-brands fa-git-alt",
-      "icon_color": "ic-red",
-      "tag": "Tool",
-      "tag_class": "tag-tool"
-    },
-    {
       "name": "Python",
       "version": "3.12",
       "icon": "fa-brands fa-python",
       "icon_color": "ic-yellow",
       "tag": "Dev",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Sublime Text",
-      "version": "4",
-      "icon": "fa-regular fa-file-code",
-      "icon_color": "ic-gray",
-      "tag": "IDE",
       "tag_class": "tag-tool"
     },
     {
@@ -58,7 +42,7 @@
     },
     {
       "name": "Chrome",
-      "version": "Latest",
+      "version": "latest",
       "icon": "fa-solid fa-box",
       "icon_color": "ic-gray",
       "tag": "Tool",
@@ -66,14 +50,6 @@
     }
   ],
   "526": [
-    {
-      "name": "Visual Studio 2022",
-      "version": "2022 Community",
-      "icon": "fa-solid fa-code",
-      "icon_color": "ic-purple",
-      "tag": "IDE",
-      "tag_class": "tag-tool"
-    },
     {
       "name": "Visual Studio Code",
       "version": "1.88+",
@@ -91,14 +67,6 @@
       "tag_class": "tag-tool"
     },
     {
-      "name": "Git",
-      "version": "2.44",
-      "icon": "fa-brands fa-git-alt",
-      "icon_color": "ic-red",
-      "tag": "Tool",
-      "tag_class": "tag-tool"
-    },
-    {
       "name": "Python",
       "version": "3.12",
       "icon": "fa-brands fa-python",
@@ -124,7 +92,7 @@
     },
     {
       "name": "Chrome",
-      "version": "Latest",
+      "version": "latest",
       "icon": "fa-solid fa-box",
       "icon_color": "ic-gray",
       "tag": "Tool",
@@ -157,30 +125,6 @@
       "tag_class": "tag-tool"
     },
     {
-      "name": "Visual Studio Code",
-      "version": "1.88+",
-      "icon": "fa-solid fa-code",
-      "icon_color": "ic-blue",
-      "tag": "IDE",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "XAMPP",
-      "version": "v8.2",
-      "icon": "fa-solid fa-server",
-      "icon_color": "ic-orange",
-      "tag": "Web",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Git",
-      "version": "2.44",
-      "icon": "fa-brands fa-git-alt",
-      "icon_color": "ic-red",
-      "tag": "Tool",
-      "tag_class": "tag-tool"
-    },
-    {
       "name": "Python",
       "version": "3.12",
       "icon": "fa-brands fa-python",
@@ -197,7 +141,7 @@
       "tag_class": "tag-tool"
     },
     {
-      "name": "Chrome",
+      "name": "Microsoft Word",
       "version": "Latest",
       "icon": "fa-solid fa-box",
       "icon_color": "ic-gray",
@@ -239,43 +183,11 @@
       "tag_class": "tag-tool"
     },
     {
-      "name": "XAMPP",
-      "version": "v8.2",
-      "icon": "fa-solid fa-server",
-      "icon_color": "ic-orange",
-      "tag": "Web",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Git",
-      "version": "2.44",
-      "icon": "fa-brands fa-git-alt",
-      "icon_color": "ic-red",
-      "tag": "Tool",
-      "tag_class": "tag-tool"
-    },
-    {
       "name": "Python",
       "version": "3.12",
       "icon": "fa-brands fa-python",
       "icon_color": "ic-yellow",
       "tag": "Dev",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Postman",
-      "version": "10.x",
-      "icon": "fa-solid fa-paper-plane",
-      "icon_color": "ic-orange",
-      "tag": "Tool",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Chrome",
-      "version": "Latest",
-      "icon": "fa-solid fa-box",
-      "icon_color": "ic-gray",
-      "tag": "Tool",
       "tag_class": "tag-tool"
     }
   ],
@@ -313,14 +225,6 @@
       "tag_class": "tag-tool"
     },
     {
-      "name": "Git",
-      "version": "2.44",
-      "icon": "fa-brands fa-git-alt",
-      "icon_color": "ic-red",
-      "tag": "Tool",
-      "tag_class": "tag-tool"
-    },
-    {
       "name": "VirtualBox",
       "version": "7.0",
       "icon": "fa-solid fa-box",
@@ -334,14 +238,6 @@
       "icon": "fa-solid fa-circle-dot",
       "icon_color": "ic-pink",
       "tag": "IDE",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Chrome",
-      "version": "Latest",
-      "icon": "fa-solid fa-box",
-      "icon_color": "ic-gray",
-      "tag": "Tool",
       "tag_class": "tag-tool"
     }
   ],
@@ -400,14 +296,6 @@
       "icon": "fa-solid fa-circle-dot",
       "icon_color": "ic-pink",
       "tag": "IDE",
-      "tag_class": "tag-tool"
-    },
-    {
-      "name": "Chrome",
-      "version": "Latest",
-      "icon": "fa-solid fa-box",
-      "icon_color": "ic-gray",
-      "tag": "Tool",
       "tag_class": "tag-tool"
     }
   ]
