@@ -298,6 +298,8 @@
     color: #1a1a2e;
     font-family: 'DM Sans', sans-serif;
     transition: border-color 0.2s, box-shadow 0.2s;
+    /* Prevent iOS zoom on focus (needs font-size >= 16px on mobile) */
+    -webkit-appearance: none;
 }
 
 .field-group input::placeholder {
@@ -319,6 +321,8 @@
     margin: 2px 0 20px;
     font-size: 13px;
     color: #666;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .login-meta label {
@@ -356,6 +360,9 @@
     letter-spacing: 0.03em;
     cursor: pointer;
     transition: all 0.25s ease;
+    /* Better tap target on mobile */
+    min-height: 48px;
+    touch-action: manipulation;
 }
 
 .btn-register:hover,
@@ -363,6 +370,21 @@
     background: #1a4db5;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 48, 135, 0.28);
+}
+
+/* Disable hover transform on touch devices to avoid sticky hover states */
+@media (hover: none) {
+    .btn-register:hover,
+    .btn-login:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-register:active,
+    .btn-login:active {
+        background: #1a4db5;
+        transform: scale(0.98);
+    }
 }
 
 /* ── Already/Not have account redirect ── */
@@ -383,7 +405,6 @@
     margin-bottom: 15px;
 }
 
-/* NEW */
 .flash {
     padding: 10px 12px;
     border-radius: 5px;
@@ -403,24 +424,6 @@
     border: 1px solid #f5c6cb;
 }
 
-/* ── Back to Home link ── 
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #aaa;
-    text-decoration: none;
-    font-size: 13px;
-    margin-bottom: 18px;
-    transition: color 0.2s;
-}
-
-
-
-.back-link:hover {
-    color: #003087;
-}*/
-
 /* ── Style select fields to match input fields ── */
 .field-group select {
     padding: 11px 14px;
@@ -430,7 +433,7 @@
     font-size: 14px;
     color: #1a1a2e;
     font-family: 'DM Sans', sans-serif;
-    appearance: none; /* remove default arrow for consistent style */
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -445,31 +448,53 @@
     outline: none;
     border-color: #003087;
     box-shadow: 0 0 0 3px rgba(0, 48, 135, 0.08);
-    background: #fff url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Cpath fill='%23999' d='M7 8L0 0h14z'/%3E%3C/svg%3E") no-repeat right 12px center;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Cpath fill='%23999' d='M7 8L0 0h14z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
 }
 
 /* ══════════════════════════════
-   RESPONSIVE — LOGIN / REGISTER
+   RESPONSIVE — TABLET (≤900px)
 ══════════════════════════════ */
 @media (max-width: 900px) {
     .split-screen {
         flex-direction: column;
         min-height: auto;
+        margin-top: 72px;
     }
 
+    /* Left panel: tall enough to show all content without overlap */
     .left-panel {
-        min-height: 260px;
-        padding: 52px 32px 36px;
+        min-height: 320px;
+        padding: 80px 32px 32px; /* top padding clears the logo */
+        flex: none;
+        justify-content: flex-end;
     }
 
     .left-panel-logo {
         left: 32px;
+        top: 24px;
+    }
+
+    /* Reposition info cards so they don't overlap logo or bottom text */
+    .info-card-top {
+        top: auto;
+        bottom: 110px;
+        left: auto;
+        right: 24px;
+        width: 160px;
+    }
+
+    .info-card-mid {
+        display: none;
     }
 
     .right-panel,
     .right-panel-wide {
         padding: 40px 28px;
         flex: unset;
+        align-items: flex-start;
     }
 
     .form-box,
@@ -477,14 +502,166 @@
         max-width: 100%;
     }
 
-    .info-card-mid {
-        display: none;
+    .form-logo img {
+        height: 80px;
+        width: 80px;
     }
 }
 
-@media (max-width: 768px) {
+/* ══════════════════════════════
+   RESPONSIVE — MOBILE (≤600px)
+══════════════════════════════ */
+@media (max-width: 600px) {
+    .split-screen {
+        flex-direction: column;
+        margin-top: 60px;
+    }
+
+    /* Tall enough: logo top + card middle + bottom text = no overlap */
+    .left-panel {
+        min-height: 280px;
+        padding: 72px 20px 28px; /* top padding reserves space for the logo */
+        justify-content: flex-end;
+    }
+
+    .left-panel-logo {
+        top: 18px;
+        left: 20px;
+    }
+
+    .left-panel-logo img {
+        height: 32px;
+        width: 32px;
+    }
+
+    .left-panel-logo span {
+        font-size: 11px;
+    }
+
+    /* Move the lab schedule card to bottom-right, away from the logo & heading */
+    .floating-cards {
+        display: block; /* keep visible but reposition */
+    }
+
+    .info-card-top {
+        top: auto;
+        bottom: 90px;   /* sits just above the bottom text */
+        left: auto;
+        right: 16px;
+        width: 150px;
+        animation: none; /* stop float animation on mobile for performance */
+    }
+
+    .info-card-mid {
+        display: none;
+    }
+
+    .left-panel-text h2 {
+        font-size: 18px;
+        margin-bottom: 6px;
+    }
+
+    .left-panel-text p {
+        font-size: 12.5px;
+        max-width: 200px; /* keep text from running into the card */
+    }
+
+    /* Tighten blobs */
+    .circle-blob-gold-lg {
+        width: 120px;
+        height: 120px;
+    }
+
+    .circle-blob-white {
+        width: 80px;
+        height: 80px;
+    }
+
+    /* Right panel */
+    .right-panel,
+    .right-panel-wide {
+        padding: 32px 20px 40px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-box,
+    .form-box-wide {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .form-logo img {
+        height: 72px;
+        width: 72px;
+    }
+
+    .form-box h2 {
+        font-size: 22px;
+    }
+
+    .form-box .form-subtitle {
+        font-size: 13px;
+        margin-bottom: 22px;
+    }
+
+    /* font-size 16px prevents iOS auto-zoom on focus */
+    .field-group input,
+    .field-group select {
+        font-size: 16px;
+        padding: 13px 14px;
+    }
+
     .field-row {
         flex-direction: column;
         gap: 0;
+    }
+
+    .login-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .btn-register,
+    .btn-login {
+        font-size: 16px;
+        padding: 15px;
+        min-height: 52px;
+    }
+
+    .account-redirect {
+        font-size: 14px;
+        margin-top: 24px;
+        padding-bottom: 16px;
+    }
+}
+
+/* ══════════════════════════════
+   RESPONSIVE — VERY SMALL (≤400px)
+══════════════════════════════ */
+@media (max-width: 400px) {
+    .left-panel {
+        min-height: 260px;
+        padding: 68px 16px 24px;
+    }
+
+    .left-panel-logo {
+        left: 16px;
+    }
+
+    /* On very small screens hide the card entirely to avoid any overflow */
+    .floating-cards {
+        display: none;
+    }
+
+    .left-panel-text p {
+        max-width: 100%;
+    }
+
+    .right-panel,
+    .right-panel-wide {
+        padding: 24px 16px 32px;
     }
 }
